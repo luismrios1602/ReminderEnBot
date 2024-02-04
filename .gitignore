@@ -1,0 +1,5 @@
+# Archivos de configuración
+/.vscode
+/__pycache__
+config.py
+bot.cmd
