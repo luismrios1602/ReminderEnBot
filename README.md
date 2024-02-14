@@ -11,5 +11,7 @@ Las variables necesarias son las siguientes: <br>
 <b>MYSQL_PASSWORD</b> = "[PASSWORD DE LA CONEXION A MYSQL]"<br>
 <b>MYSQL_DATABASE</b> = "reminden"<br>
 <b>MYSQL_PORT</b> = "[TU PUERTO DE MYSQL]"<br>
+<b>HORA_MORNING</b> = [HORA EN LA QUE SE EMPEZARAN A ENVIAR LOS MENSAJES]<br>
+<b>HORA_NIGHT</b> = [HORA EN LA QUE SE DEJARAN DE ENVIAR LOS MENSAJES]<br>
 
 importante: Reemplezar [TEXTO] por los valores reales, manteniendo las comillas donde se requiera.
