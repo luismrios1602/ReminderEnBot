@@ -607,12 +607,10 @@ def search_words_today():
     hora_actual = hora(datetime.now().time().hour, datetime.now().time().minute)
 
     # Define la hora mañana (08:00) en horario UTC+0 del servidor
-    hora_manhana = hora(13, 0)
-    # hora_manhana = hora(8, 0)
+    hora_manhana = hora(HORA_MORNING, 0)
 
     # Define la hora noche (22:00) en horario UTC+0 del servidor
-    hora_noche = hora(3,0)
-    # hora_noche = hora(22,0)
+    hora_noche = hora(HORA_NIGHT,0)
 
     print(f'hora actual: {hora_actual}')
 
@@ -680,7 +678,11 @@ def show_all(cur_page=0, listWords=[]):
 
 #funcion para reprogramar palabras que no pudieron ser enviadas
 def reschedule_words_earlier():
-    reschedule_words()
+    #Primero consultamos las palabras vencidas de todos los usuarios
+    words_found = search_expired_words()
+    for word in words_found:
+        resp = reschedule_word(word)
+        print(resp)
 
 #funcion para editar toda la palabra
 def update_word(word):

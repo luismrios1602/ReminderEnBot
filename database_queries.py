@@ -247,7 +247,56 @@ def update_word(id_word):
         if conexion.is_connected():
             conexion.close()
 
-def reschedule_words():
+#funcion para consultar todas las palabras vencidas a renovar
+def search_expired_words():
+    try: 
+        conexion = mysql.connector.connect(
+            host = MYSQL_HOST, 
+            user = MYSQL_USERNAME,
+            password = MYSQL_PASSWORD,
+            port = MYSQL_PORT,
+            database = MYSQL_DATABASE)
+        
+        print(conexion)
+    except Exception as err:
+        print('Error creando la conexión')
+        print(err)
+        return []
+    else:
+        try:
+            print('Conectado a la BD')
+            # Obtener la fecha y hora actuales en formato AAAA-MM-DD HH:MM
+            fecha_hora_actual = datetime.datetime.now().strftime('%Y-%m-%d %H:%M')
+
+            print(f'consultando todas las palabras vencidas ...')
+
+            # Construir y ejecutar la consulta SQL
+            query = f"SELECT id FROM words WHERE scheduled < NOW() ORDER BY id"
+
+            lista = []
+            
+            cursor = conexion.cursor()
+            cursor.execute(query)
+
+            #Cada registro viene como una tupla, entonces basados en la tupla creamos un objeto tipo word
+            for word_found in cursor:
+                word = WordClass(*word_found)
+                print(word)
+                lista.append(word)
+
+            conexion.close()
+            return lista
+
+        except Exception as err:
+            print('Error consultando palabras')
+            print(err)
+            return []
+    finally:
+        if conexion.is_connected():
+            conexion.close()
+
+#funcion para reprogramar una palabra que haya sido encontrada en la consulta de vencidas
+def reschedule_word(word):
     try: 
         conexion = mysql.connector.connect(
             host = MYSQL_HOST, 
@@ -273,9 +322,9 @@ def reschedule_words():
             print('Reprogramando palabras ... ')
 
             cursor = conexion.cursor()
-            sql = f"UPDATE words SET scheduled = %s WHERE scheduled < NOW() AND id > %s"
+            sql = f"UPDATE words SET scheduled = %s WHERE id = %s"
             
-            parametros = (fecha_hora_aleatoria, 0)
+            parametros = (fecha_hora_aleatoria, word.id)
             cursor.execute(sql, parametros)
             conexion.commit()
 
@@ -289,6 +338,7 @@ def reschedule_words():
         if conexion.is_connected():
             conexion.close()
 
+#funcion para editar una palabra especifica
 def query_update_word(word):
     try: 
         conexion = mysql.connector.connect(
