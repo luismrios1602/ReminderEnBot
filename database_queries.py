@@ -1,11 +1,11 @@
-from config import MYSQL_HOST, MYSQL_USERNAME, MYSQL_PASSWORD, MYSQL_DATABASE, MYSQL_PORT
+from config import MYSQL_HOST, MYSQL_USERNAME, MYSQL_PASSWORD, MYSQL_DATABASE, MYSQL_PORT, HORA_MORNING, HORA_NIGHT
 from WordClass import WordClass
 import mysql.connector
 import random
 import datetime
 
 #funcion para crear el audio en la bd
-def create_word(objWord, chatId):
+def query_create_word(objWord, chatId):
     try: 
         conexion = mysql.connector.connect(
             host = MYSQL_HOST, 
@@ -47,22 +47,8 @@ def create_word(objWord, chatId):
 
         return "success"
 
-# Función para generar una fecha aleatoria entre 1 y 7 días después de la fecha actual
-def generar_fecha_aleatoria():
-    dias_aleatorios = random.randint(1, 7)
-    fecha_actual = datetime.datetime.now()
-    fecha_aleatoria = fecha_actual + datetime.timedelta(days=dias_aleatorios)
-    return fecha_aleatoria
-
-# Función para generar una hora aleatoria entre las 8:00 y las 22:00, pero le ponemos 5 horas para que esté con el horario del UTC-5
-def generar_hora_aleatoria():
-    hora_aleatoria = datetime.datetime.strptime("13:00", "%H:%M")
-    minutos_aleatorios = random.randint(0, 840)  # 840 minutos = 14 horas
-    hora_aleatoria += datetime.timedelta(minutes=minutos_aleatorios)
-    return hora_aleatoria
-
 #función para consultar las palabras programadas para ahora 
-def select_words():
+def query_select_words():
     try: 
         conexion = mysql.connector.connect(
             host = MYSQL_HOST, 
@@ -110,7 +96,7 @@ def select_words():
             conexion.close()
 
 #funcion para consultar una sola palabra
-def select_word(word, chatId):
+def query_select_word(word, chatId):
     try: 
         conexion = mysql.connector.connect(
             host = MYSQL_HOST, 
@@ -159,7 +145,7 @@ def select_word(word, chatId):
             conexion.close()
 
 #función para consultar las palabras programadas para ahora 
-def select_all(chatId):
+def query_select_all(chatId):
     try: 
         conexion = mysql.connector.connect(
             host = MYSQL_HOST, 
@@ -206,49 +192,8 @@ def select_all(chatId):
         if conexion.is_connected():
             conexion.close()
 
-#funcion para actualizarle a una palabra su hora de reenvio
-def update_word(id_word):
-    try: 
-        conexion = mysql.connector.connect(
-            host = MYSQL_HOST, 
-            user = MYSQL_USERNAME,
-            password = MYSQL_PASSWORD,
-            port = MYSQL_PORT,
-            database = MYSQL_DATABASE)
-        
-        print(conexion)
-    except Exception as err:
-        print('Error creando la conexión')
-        print(err)
-        return "error"
-    else:
-        try:
-            print('Conectado a la BD')
-            # Generar fecha y hora aleatorias
-            fecha_aleatoria = generar_fecha_aleatoria()
-            hora_aleatoria = generar_hora_aleatoria()
-            # Combinar fecha y hora en un objeto datetime
-            fecha_hora_aleatoria = datetime.datetime.combine(fecha_aleatoria.date(), hora_aleatoria.time())
-
-            cursor = conexion.cursor()
-            sql = f"UPDATE words SET scheduled = %s WHERE id = %s"
-            
-            parametros = (fecha_hora_aleatoria, id_word)
-            cursor.execute(sql, parametros)
-            conexion.commit()
-
-            return "success"
-
-        except Exception as err:
-            print('Error actualizando palabra mostrada')
-            print(err)
-            return "error"
-    finally:
-        if conexion.is_connected():
-            conexion.close()
-
 #funcion para consultar todas las palabras vencidas a renovar
-def search_expired_words():
+def query_search_expired_words():
     try: 
         conexion = mysql.connector.connect(
             host = MYSQL_HOST, 
@@ -295,8 +240,8 @@ def search_expired_words():
         if conexion.is_connected():
             conexion.close()
 
-#funcion para reprogramar una palabra que haya sido encontrada en la consulta de vencidas
-def reschedule_word(word):
+#funcion para reprogramar una palabra que haya sido encontrada en la consulta de vencidas o mostrada el día de hoy
+def query_reschedule_word(word):
     try: 
         conexion = mysql.connector.connect(
             host = MYSQL_HOST, 
@@ -405,3 +350,17 @@ def query_delete_word(word_id):
     finally:
         if conexion.is_connected():
             conexion.close()
+
+# Función para generar una fecha aleatoria entre 1 y 7 días después de la fecha actual
+def generar_fecha_aleatoria():
+    dias_aleatorios = random.randint(1, 7)
+    fecha_actual = datetime.datetime.now()
+    fecha_aleatoria = fecha_actual + datetime.timedelta(days=dias_aleatorios)
+    return fecha_aleatoria
+
+# Función para generar una hora aleatoria entre las 8:00 y las 22:00, pero le ponemos 5 horas para que esté con el horario del UTC-5
+def generar_hora_aleatoria():
+    hora_aleatoria = datetime.datetime.strptime(f"{HORA_MORNING}:00", "%H:%M")
+    minutos_aleatorios = random.randint(0, 840)  # 840 minutos = 14 horas
+    hora_aleatoria += datetime.timedelta(minutes=minutos_aleatorios)
+    return hora_aleatoria

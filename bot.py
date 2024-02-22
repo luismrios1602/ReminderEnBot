@@ -296,7 +296,7 @@ def inline_buttom(call):
     # Realiza la inserción en la base de datos usando 'word', 'meaning', 'descripcion' y 'examples'
     elif call.data == 'confirmar':
         try:
-            create = create_word(current_words[chatId], chatId)
+            create = query_create_word(current_words[chatId], chatId)
                 
             if create == 'success': 
                 #añadimos un markup para el boton inline en el mensaje
@@ -631,7 +631,7 @@ def search_words_today():
         return
     
     #Si llega hasta aquí es porque la hora es mayor que la hora de la mañana o menor que la hora de la noche y ambos casos messirve
-    words_now = select_words()
+    words_now = query_select_words()
     if len(words_now) > 0:
         #Si hay palabras, empezamos a mandarlas a cada usuario
         for word in words_now:
@@ -645,18 +645,18 @@ def search_words_today():
             bot.send_message(word.chatId, message,  parse_mode="MarkdownV2", reply_markup=markup, disable_web_page_preview=True)
 
             #Reprogramamos la palabra
-            updated = update_word(word.id)
+            updated = query_reschedule_word(word)
     else:
         print("No hay palabras")        
     
 #funcion para buscar una sola palabra
 def search_word(word, chatId):
-    word_found = select_word(escapar_caracteres_especiales(word), chatId)
+    word_found = query_select_word(escapar_caracteres_especiales(word), chatId)
     return word_found
 
 #funcion para buscar todas las palabras del usuario
 def search_all_words(chatId):
-    words_found = select_all(chatId)
+    words_found = query_select_all(chatId)
     return words_found
 
 #funcion para mapear la respuesta del mostrartodos
@@ -679,9 +679,9 @@ def show_all(cur_page=0, listWords=[]):
 #funcion para reprogramar palabras que no pudieron ser enviadas
 def reschedule_words_earlier():
     #Primero consultamos las palabras vencidas de todos los usuarios
-    words_found = search_expired_words()
+    words_found = query_search_expired_words()
     for word in words_found:
-        resp = reschedule_word(word)
+        resp = query_reschedule_word(word)
         print(resp)
 
 #funcion para editar toda la palabra
