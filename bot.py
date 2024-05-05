@@ -27,7 +27,7 @@ words_all = []
 # responde al comando /start
 @bot.message_handler(commands=["start"])
 def cmd_start(message):
-    bot.reply_to(message, f'''Bienvenido, soy RemindEn tu recordatorio de palabras en inglés ✌
+    bot.reply_to(message, f'''Bienvenido 👋, soy RemindEn tu recordatorio de palabras ✌
 Para conocer cómo funciono, envía /help para ayuda''')
 
 # responde al comando /help
@@ -391,24 +391,40 @@ def inline_buttom(call):
             print(err)
             bot.send_message(chatId, "Se ha presentado un error")
 
+    elif call.data in ['pron_EN', 'pron_ES', 'pron_BR', 'pron_FR', 'pron_IT']:
+        # sacamos las 2 ultimas letras que contienen el codigo del idioma
+        lang_word = call.data[-2:]
+        word = dropEspecialCaracters(current_words[chatId].word)
+        send_pronunciation(word, lang_word, chatId, messageId)
+
     # Si no es ninguno es porque es pronunciacion
     else:
         try:
-            word = call.data 
+            word = dropEspecialCaracters(call.data)
+            lang_word = current_words[chatId].lang_word
+            print(f'{lang_word}')
 
-            # Convierte la transcripción a voz usando gTTS
-            tts = gTTS(text=f' {word}', lang='en')
-            tts.save(f'{word}.mp3')  # Guarda el archivo de audio
+            if lang_word != '':
+                send_pronunciation(word, lang_word, chatId, messageId)
+            
+            else: 
+                #Si no hay palabra es porque quiere escuchar la pronunciacion de una palabra o frase no registrada
+                current_words[chatId].word = call.data #Guardamos la palabra provicionalmente
 
-            # Envía el archivo de audio al usuario
-            voice_message = open(f'{word}.mp3', 'rb')
-            bot.send_voice(chatId, voice_message, reply_to_message_id=messageId)
+                mensaje = f"🗣️ ¿En qué idioma quieres escuchar?"
+                mensaje = escapar_caracteres_especiales(mensaje)
 
-            # Cierra el archivo después de enviarlo
-            voice_message.close()
+                markup = InlineKeyboardMarkup(row_width=5)
+                btn_ingles = InlineKeyboardButton(f"{emoji_flags['EN']}", callback_data="pron_EN")
+                btn_espanhol = InlineKeyboardButton(f"{emoji_flags['ES']}", callback_data="pron_ES")
+                btn_portugues = InlineKeyboardButton(f"{emoji_flags['BR']}", callback_data="pron_BR")
+                btn_frances = InlineKeyboardButton(f"{emoji_flags['FR']}", callback_data="pron_FR")
+                btn_italiano = InlineKeyboardButton(f"{emoji_flags['IT']}", callback_data="pron_IT")
+                btn_cancelar = InlineKeyboardButton("✖ Cancelar", callback_data="cancelar")
 
-            # Elimina el archivo del sistema
-            os.remove(f'{word}.mp3')
+                markup.add(btn_ingles, btn_espanhol, btn_portugues,btn_frances, btn_italiano, btn_cancelar)
+
+                bot.reply_to(call.message, mensaje, parse_mode="MarkdownV2",reply_markup=markup)
 
         except Exception as err:
             bot.send_message(chatId, f"😪 Ups... Error al reproducir la palabra.\n\n Causa:`{str(err)}`")
@@ -770,6 +786,13 @@ def escapar_caracteres_especiales(text):
         text = text.replace(char, '\\' + char)
     return text
 
+#funcion para eliminar caracteres especiales de una palabra para que no se rompa el nombre del archivo
+def dropEspecialCaracters(text):
+    caracteres_reservados = r'|?!-[]()~`<>.#+={}¿'
+    for char in caracteres_reservados:
+        text = text.replace(char, '')
+    return text
+
 #funcion para mapear los botones de siguiente, cerrar y anterior para los mensajes de paginacion
 def add_pag_buttons():
     markup = InlineKeyboardMarkup(row_width = 3)
@@ -797,6 +820,33 @@ def format_word(word):
 {emoji_example} {word.examples}
 
 {emoji_flags[word.lang_meaning]} ||{word.meaning}|| '''
+
+#funcion para enviar pronunciacion 
+def send_pronunciation(word, lang, chatId, messageId):
+    global current_words
+
+    accents = {
+        'EN': 'us',
+        'ES': 'es',
+        'PT': 'com.br',
+        'FR': 'fr',
+        'IT': 'it'
+    }
+    # si es brasileño tenemos que pasarlo a portugues
+    lang = 'PT' if lang == 'BR' else lang
+
+    tts = gTTS(text=f' {word}', lang=f'{lang.lower()}', tld=f'{accents[lang]}')
+    tts.save(f'{word}.mp3')  # Guarda el archivo de audio
+
+    # Envía el archivo de audio al usuario
+    voice_message = open(f'{word}.mp3', 'rb')
+    bot.send_voice(chatId, voice_message, reply_to_message_id=messageId)
+
+    # Cierra el archivo después de enviarlo
+    voice_message.close()
+
+    # Elimina el archivo del sistema
+    os.remove(f'{word}.mp3')
 
 #endregion 
 
