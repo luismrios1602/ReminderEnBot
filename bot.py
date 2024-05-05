@@ -199,8 +199,8 @@ def inline_buttom(call):
     elif call.data == 'editar':
         if chatId in current_words:
             markup = InlineKeyboardMarkup(row_width = 4)
-            btn_word = InlineKeyboardButton(f"{emoji_flag_usa} Palabra", callback_data="edit_word")
-            btn_meaning = InlineKeyboardButton(f"{emoji_flag_es} Traducciones", callback_data="edit_meaning")
+            btn_word = InlineKeyboardButton(f"{emoji_flags[current_words[chatId].lang_word]} Palabra", callback_data="edit_word")
+            btn_meaning = InlineKeyboardButton(f"{emoji_flags[current_words[chatId].lang_meaning]} Traducciones", callback_data="edit_meaning")
             btn_explain = InlineKeyboardButton(f"{emoji_explain} Explicación", callback_data="edit_explain")
             btn_example = InlineKeyboardButton(f"{emoji_example} Ejemplos", callback_data="edit_example")
 
@@ -223,7 +223,7 @@ def inline_buttom(call):
 
         markup.add(btn_cancelar)
 
-        mensaje = f"{emoji_flag_usa} Ingrese la palabra corregida:"
+        mensaje = f"{emoji_flags[current_words[chatId].lang_word]} Ingrese la palabra corregida:"
         mensaje = escapar_caracteres_especiales(mensaje)
 
         bot.send_message(chatId, mensaje, reply_markup=markup)
@@ -237,7 +237,7 @@ def inline_buttom(call):
 
         markup.add(btn_cancelar)
 
-        mensaje = f"{emoji_flag_es} Ingrese la(s) traduccion(es) corregida(s):"
+        mensaje = f"{emoji_flags[current_words[chatId].lang_meaning]} Ingrese la(s) traduccion(es) corregida(s):"
 
         bot.send_message(chatId, mensaje, reply_markup=markup)
         bot.register_next_step_handler(call.message, update_current_meaning)
@@ -327,20 +327,69 @@ def inline_buttom(call):
         try:
             bot.delete_message(chatId, messageId)
 
-            mensaje = f"{emoji_flag_es} Ingresa su(s) traduccion(es): "
+            mensaje = f"🌎 ¿En qué idioma está esta palabra? "
             mensaje = escapar_caracteres_especiales(mensaje)
 
-            markup = InlineKeyboardMarkup(row_width = 2)
+            markup = InlineKeyboardMarkup(row_width = 5)
+            btn_ingles = InlineKeyboardButton(f"{emoji_flags['EN']}", callback_data="word_EN")
+            btn_espanhol = InlineKeyboardButton(f"{emoji_flags['ES']}", callback_data="word_ES")
+            btn_portugues = InlineKeyboardButton(f"{emoji_flags['BR']}", callback_data="word_BR")
+            btn_frances = InlineKeyboardButton(f"{emoji_flags['FR']}", callback_data="word_FR")
+            btn_italiano = InlineKeyboardButton(f"{emoji_flags['IT']}", callback_data="word_IT")
             btn_cancelar = InlineKeyboardButton("✖ Cancelar", callback_data="cancelar")
             
-            markup.add(btn_cancelar)
+            markup.add(btn_ingles, btn_espanhol, btn_portugues, btn_frances, btn_italiano, btn_cancelar)
 
             bot.send_message(call.message.chat.id, mensaje, parse_mode="MarkdownV2", reply_markup=markup)
-            bot.register_next_step_handler(call.message, receive_meaning)
 
         except Exception as err:
             prin(err)
             bot.send_message(call.message.chat.id, f"😪 Ups... Se ha presentado un error")
+
+    elif call.data in ['word_EN', 'word_ES', 'word_BR', 'word_FR', 'word_IT']:
+        bot.delete_message(chatId, messageId)
+
+        try:
+            lang = call.data[-2:] #sacamos las 2 ultimas letras que contienen el codigo del idioma
+            current_words[chatId].lang_word = escapar_caracteres_especiales(lang)
+
+            mensaje = f"🌎 Ingrese su(s) traducción(es): "
+            mensaje = escapar_caracteres_especiales(mensaje)
+
+            markup = InlineKeyboardMarkup(row_width=2)
+            btn_cancelar = InlineKeyboardButton("✖ Cancelar", callback_data="cancelar")
+
+            markup.add(btn_cancelar)
+
+            bot.send_message(chatId, mensaje,parse_mode="MarkdownV2", reply_markup=markup)
+            bot.register_next_step_handler(call.message, receive_meaning)
+
+        except Exception as err:
+            print(err)
+            bot.send_message(chatId, "Se ha presentado un error")
+
+    elif call.data in ['meaning_EN', 'meaning_ES', 'meaning_BR', 'meaning_FR', 'meaning_IT']:
+        bot.delete_message(chatId, messageId)
+
+        try:
+            # sacamos las 2 ultimas letras que contienen el codigo del idioma
+            lang = call.data[-2:]
+            current_words[chatId].lang_meaning = escapar_caracteres_especiales(lang)
+
+            mensaje = f"{emoji_explain} Ingresa una breve explicación: "
+
+            markup = InlineKeyboardMarkup(row_width=2)
+            btn_cancelar = InlineKeyboardButton("✖ Cancelar", callback_data="cancelar")
+
+            markup.add(btn_cancelar)
+
+            bot.send_message(chatId, mensaje, parse_mode="MarkdownV2", reply_markup=markup)
+            bot.register_next_step_handler(call.message, receive_explain)
+            
+
+        except Exception as err:
+            print(err)
+            bot.send_message(chatId, "Se ha presentado un error")
 
     # Si no es ninguno es porque es pronunciacion
     else:
@@ -368,24 +417,29 @@ def inline_buttom(call):
 #endregion 
 
 #region === METODOS DE PASOS DE RECEPCION DE DATOS === 
-#funcion para recibir la palabra en español
+
+#funcion para recibir las traducciones
 def receive_meaning(message):
     chatId = message.chat.id
 
-    #Si envío un nombre correcto entonces le pedimos el link
     try:
         global current_words
         current_words[chatId].meaning = escapar_caracteres_especiales(message.text)
         
-        mensaje = f"{emoji_explain} Ingresa una breve explicación: "
+        mensaje = f"🌎 ¿En qué idioma están las traducciones?"
+        mensaje = escapar_caracteres_especiales(mensaje)
 
-        markup = InlineKeyboardMarkup(row_width = 2)
+        markup = InlineKeyboardMarkup(row_width=5)
+        btn_ingles = InlineKeyboardButton(f"{emoji_flags['EN']}", callback_data="meaning_EN")
+        btn_espanhol = InlineKeyboardButton(f"{emoji_flags['ES']}", callback_data="meaning_ES")
+        btn_portugues = InlineKeyboardButton(f"{emoji_flags['BR']}", callback_data="meaning_BR")
+        btn_frances = InlineKeyboardButton(f"{emoji_flags['FR']}", callback_data="meaning_FR")
+        btn_italiano = InlineKeyboardButton(f"{emoji_flags['IT']}", callback_data="meaning_IT")
         btn_cancelar = InlineKeyboardButton("✖ Cancelar", callback_data="cancelar")
-        
-        markup.add(btn_cancelar)
 
-        bot.send_message(message.chat.id, mensaje, parse_mode="MarkdownV2", reply_markup=markup)
-        bot.register_next_step_handler(message, receive_explain)
+        markup.add(btn_ingles, btn_espanhol, btn_portugues, btn_frances, btn_italiano, btn_cancelar)
+
+        bot.reply_to(message, mensaje, parse_mode="MarkdownV2", reply_markup=markup)
 
     except Exception as err:
         print(err)
@@ -680,7 +734,7 @@ def show_all(cur_page=0, listWords=[]):
 
     for word in listWords[inicio:fin]:
         i += 1
-        response += f'[{i}]\n{emoji_flag_usa} *{word.word}*\n{emoji_flag_es} {word.meaning}\n\n'
+        response += f'[{i}]\n{emoji_flags[word.lang_word]} *{word.word}*\n{emoji_flags[word.lang_meaning]} {word.meaning}\n\n'
 
     header_resp = f'_Resultado *{cur_page+1}* al *{i}* de *{len(listWords)}*_\n'
     return header_resp + response
@@ -736,13 +790,13 @@ def update_pag(pag, messageId, words_all):
 # funcion para formatear una palabra y mostrarla siempre de la misma forma
 def format_word(word):
     return f'''
-{emoji_flag_usa} *{word.word}*
+{emoji_flags[word.lang_word]} *{word.word}*
 
 {emoji_explain} {word.description}
 
 {emoji_example} {word.examples}
 
-{emoji_flag_es} ||{word.meaning}|| '''
+{emoji_flags[word.lang_meaning]} ||{word.meaning}|| '''
 
 #endregion 
 

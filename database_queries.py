@@ -30,10 +30,10 @@ def query_create_word(objWord, chatId):
             fecha_hora_aleatoria = datetime.datetime.combine(fecha_aleatoria.date(), hora_aleatoria.time())
 
             cursor = conexion.cursor()
-            sql = f"INSERT INTO words(word, meaning, description, examples, chat_id, scheduled) VALUES (%s, %s, %s, %s, %s, %s)"
+            sql = f"INSERT INTO words(word, lang_word, meaning, lang_meaning, description, examples, chat_id, scheduled) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)"
             print(f'Guardando palabra {objWord.word}...')
             
-            parametros = (objWord.word ,objWord.meaning, objWord.description, objWord.examples, chatId, fecha_hora_aleatoria)
+            parametros = (objWord.word, objWord.lang_word, objWord.meaning, objWord.lang_meaning, objWord.description, objWord.examples, chatId, fecha_hora_aleatoria)
             cursor.execute(sql, parametros)
             conexion.commit()
             
@@ -71,7 +71,7 @@ def query_select_words():
             print('consultando palabras para ahora...')
 
             # Construir y ejecutar la consulta SQL
-            query = f"SELECT id, word, meaning, description, examples, chat_id FROM words WHERE DATE_FORMAT(scheduled, '%Y-%m-%d %H:%i') = '{fecha_hora_actual}'"
+            query = f"SELECT id, word, lang_word, meaning, lang_meaning, description, examples, chat_id FROM words WHERE DATE_FORMAT(scheduled, '%Y-%m-%d %H:%i') = '{fecha_hora_actual}'"
 
             lista = []
             
@@ -119,7 +119,7 @@ def query_select_word(word, chatId):
             print(f'Palabra {word}...')
 
             # Construir y ejecutar la consulta SQL
-            query = f"SELECT id, word, meaning, description, examples, chat_id FROM words WHERE word = %s AND chat_id = {chatId}"
+            query = f"SELECT id, word, lang_word, meaning, lang_meaning, description, examples, chat_id FROM words WHERE word = %s AND chat_id = {chatId}"
             
             parametros = list([word])
             cursor = conexion.cursor()
@@ -130,7 +130,7 @@ def query_select_word(word, chatId):
             print(f'Palabras encontradas: {len(lista)}')
             if len(lista) > 0:
                 #Si sí hay datos, nos traemos el primero, como es una lista de tuplas toca el 0-0
-                word_found = WordClass(lista[0][0], lista[0][1], lista[0][2], lista[0][3], lista[0][4], lista[0][5])
+                word_found = WordClass(lista[0][0], lista[0][1], lista[0][2], lista[0][3], lista[0][4], lista[0][5], lista[0][6], lista[0][7])
                 print(word_found)
                 return word_found
             else:
@@ -168,7 +168,7 @@ def query_select_all(chatId):
             print(f'consultando todas las palabras de {chatId} ...')
 
             # Construir y ejecutar la consulta SQL
-            query = f"SELECT id, word, meaning, description, examples, chat_id FROM words WHERE chat_id = {chatId} ORDER BY word"
+            query = f"SELECT id, word, lang_word, meaning, lang_meaning, description, examples, chat_id FROM words WHERE chat_id = {chatId} ORDER BY word"
 
             lista = []
             
