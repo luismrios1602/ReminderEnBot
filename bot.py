@@ -401,14 +401,21 @@ def inline_buttom(call):
     else:
         try:
             word = dropEspecialCaracters(call.data)
-            lang_word = current_words[chatId].lang_word
-            print(f'{lang_word}')
+            lang_word = ''
+
+            if len(current_words) > 0:
+                lang_word = current_words[chatId].lang_word
+            
+            print(f'Language: {lang_word}')
 
             if lang_word != '':
                 send_pronunciation(word, lang_word, chatId, messageId)
             
             else: 
                 #Si no hay palabra es porque quiere escuchar la pronunciacion de una palabra o frase no registrada
+                if len(current_words) == 0:
+                    current_words[chatId] = WordClass()
+
                 current_words[chatId].word = call.data #Guardamos la palabra provicionalmente
 
                 mensaje = f"🗣️ ¿En qué idioma quieres escuchar?"
@@ -715,13 +722,16 @@ def search_words_today():
         #Si hay palabras, empezamos a mandarlas a cada usuario
         for word in words_now:
             #añadimos un markup para los botones inline en el mensaje
+            chatId = word.chatId
             markup = InlineKeyboardMarkup(row_width = 2)
             btn_pronunciacion = InlineKeyboardButton(f"🔊 Pronunciación", callback_data=f"{word.word}")
             
             markup.add(btn_pronunciacion)
 
             message = format_word(word)
-            bot.send_message(word.chatId, message,  parse_mode="MarkdownV2", reply_markup=markup, disable_web_page_preview=True)
+            current_words[chatId] = WordClass()
+            current_words[chatId].word = word.word
+            bot.send_message(chatId, message,  parse_mode="MarkdownV2", reply_markup=markup, disable_web_page_preview=True)
 
             #Reprogramamos la palabra
             updated = query_reschedule_word(word)
@@ -823,30 +833,38 @@ def format_word(word):
 
 #funcion para enviar pronunciacion 
 def send_pronunciation(word, lang, chatId, messageId):
-    global current_words
+    try:
+        global current_words
+        accents = {
+            'EN': 'us',
+            'ES': 'es',
+            'PT': 'com.br',
+            'FR': 'fr',
+            'IT': 'it'
+        }
+        # si es brasileño tenemos que pasarlo a portugues
+        lang = 'PT' if lang == 'BR' else lang
 
-    accents = {
-        'EN': 'us',
-        'ES': 'es',
-        'PT': 'com.br',
-        'FR': 'fr',
-        'IT': 'it'
-    }
-    # si es brasileño tenemos que pasarlo a portugues
-    lang = 'PT' if lang == 'BR' else lang
+        tts = gTTS(text=f' {word}', lang=f'{lang.lower()}', tld=f'{accents[lang]}')
+        tts.save(f'{word}.mp3')  # Guarda el archivo de audio
 
-    tts = gTTS(text=f' {word}', lang=f'{lang.lower()}', tld=f'{accents[lang]}')
-    tts.save(f'{word}.mp3')  # Guarda el archivo de audio
+        # Envía el archivo de audio al usuario
+        voice_message = open(f'{word}.mp3', 'rb')
+        bot.send_voice(chatId, voice_message, reply_to_message_id=messageId)
 
-    # Envía el archivo de audio al usuario
-    voice_message = open(f'{word}.mp3', 'rb')
-    bot.send_voice(chatId, voice_message, reply_to_message_id=messageId)
+        # Cierra el archivo después de enviarlo
+        voice_message.close()
 
-    # Cierra el archivo después de enviarlo
-    voice_message.close()
+        # Elimina el archivo del sistema
+        os.remove(f'{word}.mp3')
 
-    # Elimina el archivo del sistema
-    os.remove(f'{word}.mp3')
+    except Exception as err:
+        bot.send_message(chatId, f"😪 Ups... Error al reproducir la palabra.\n\n Causa:`{str(err)}`")
+        print(err)
+    
+
+    
+        
 
 #endregion 
 
