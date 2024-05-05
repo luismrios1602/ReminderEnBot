@@ -1,7 +1,7 @@
 from config import *
 from emojis import *
-from database_queries import *
 from WordClass import WordClass
+from database_queries import *
 import os
 import time
 from datetime import datetime, time as hora
@@ -23,6 +23,7 @@ pagination = []
 num_row = 5
 words_all = []
 
+#region === COMANDOS DEL BOT === 
 # responde al comando /start
 @bot.message_handler(commands=["start"])
 def cmd_start(message):
@@ -364,7 +365,9 @@ def inline_buttom(call):
             bot.send_message(chatId, f"😪 Ups... Error al reproducir la palabra.\n\n Causa:`{str(err)}`")
             print(err)
         
-#=== METODOS DE LOGICA === 
+#endregion 
+
+#region === METODOS DE PASOS DE RECEPCION DE DATOS === 
 #funcion para recibir la palabra en español
 def receive_meaning(message):
     chatId = message.chat.id
@@ -441,6 +444,9 @@ def cancel(chat_id):
     bot.send_message(chat_id, "❌ Acción Cancelada")
     bot.clear_step_handler_by_chat_id(chat_id=chat_id)
 
+#endregion 
+
+#region === METODOS DE UPDATE === 
 #funcion para editar la propiedad word de la palabra actual del usuario
 def update_current_word(message):
     chatId = message.chat.id
@@ -597,6 +603,9 @@ def update_current_examples(message):
     bot.delete_message(chatId, messageId-1)
     bot.clear_step_handler_by_chat_id(chat_id=chatId)
 
+#endregion 
+
+#region === METODOS DE BUSQUEDA === 
 #funcion para consultar las palabras programadas para el día hoy
 def search_words_today():
     
@@ -684,6 +693,9 @@ def reschedule_words_earlier():
         resp = query_reschedule_word(word)
         print(resp)
 
+#endregion 
+
+#region === METODOS DE UPDATE Y DELETE WORDS === 
 #funcion para editar toda la palabra
 def update_word(word):
     updated = query_update_word(word)
@@ -694,9 +706,12 @@ def delete_word(word_id):
     deleted = query_delete_word(word_id)
     return deleted
 
+#endregion 
+
+#region === METODOS UTILS === 
 #funcion para realizar escape de string
 def escapar_caracteres_especiales(text):
-    caracteres_reservados = r'!-[]()~`<>.#+={}|'
+    caracteres_reservados = r'|!-[]()~`<>.#+={}'
     for char in caracteres_reservados:
         text = text.replace(char, '\\' + char)
     return text
@@ -718,21 +733,25 @@ def update_pag(pag, messageId, words_all):
     pagination = [objeto for objeto in pagination if objeto["message"] != messageId]
     pagination.append({"pag":pag, "message":messageId, "words":words_all})
 
+# funcion para formatear una palabra y mostrarla siempre de la misma forma
+def format_word(word):
+    return f'''
+{emoji_flag_usa} *{word.word}*
+
+{emoji_explain} {word.description}
+
+{emoji_example} {word.examples}
+
+{emoji_flag_es} ||{word.meaning}|| '''
+
+#endregion 
+
+#region === METODOS DE INICIO DEL BOT === 
 #funcion para quedarse recibiendo mensajes nuevos
 def receive_messages():
     print("Se sigue ejecutando, SIIIU")
     reschedule_words_earlier()
     bot.infinity_polling()
-
-#funcion para formatear una palabra y mostrarla siempre de la misma forma
-def format_word(word):
-    return f'''
-{emoji_flag_usa} *{word.word}* 
-{emoji_flag_es} *{word.meaning}*
-    
-{emoji_explain} {word.description} 
-
-{emoji_example} {word.examples}'''
 
 #funcion para iniciar hilo del bot y de consulta de palabras programadas
 def iniciar_bot():
@@ -754,6 +773,8 @@ def iniciar_bot():
             bot.stop_polling()
             break
  
+#endregion 
+
 
 # === MAIN ===
 if __name__ == '__main__':
