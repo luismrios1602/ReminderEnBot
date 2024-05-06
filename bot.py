@@ -270,7 +270,7 @@ def inline_buttom(call):
         bot.delete_message(chatId, messageId)
 
     elif call.data == 'eliminar':
-        word_id = current_words[chatId].id
+        word_id = current_words.get(chatId, False).id
         deleted = ''
 
         if word_id: 
@@ -401,21 +401,21 @@ def inline_buttom(call):
     else:
         try:
             word = dropEspecialCaracters(call.data)
-            lang_word = ''
-
-            if len(current_words) > 0:
-                lang_word = current_words[chatId].lang_word
+            
+            #Validamos si la palabra actual es del usuario tiene un lenguaje. 
+            #Si no tiene un lenguaje es porque o es una palabra sin registrar o están buscando la pronunciación de una palabra programada.
+            lang_word = current_words.get(chatId, WordClass()).lang_word
             
             print(f'Language: {lang_word}')
 
             if lang_word != '':
+                #limpiamos la palabra actual después de haberla enviado
+                current_words[chatId] = WordClass()
                 send_pronunciation(word, lang_word, chatId, messageId)
             
             else: 
-                #Si no hay palabra es porque quiere escuchar la pronunciacion de una palabra o frase no registrada
-                if len(current_words) == 0:
-                    current_words[chatId] = WordClass()
-
+                #Si no hay lengauje es porque quiere escuchar la pronunciacion de una palabra o frase no registrada                    
+                current_words[chatId] = WordClass()
                 current_words[chatId].word = call.data #Guardamos la palabra provicionalmente
 
                 mensaje = f"🗣️ ¿En qué idioma quieres escuchar?"
