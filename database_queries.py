@@ -71,7 +71,8 @@ def query_select_words():
             print('consultando palabras para ahora...')
 
             # Construir y ejecutar la consulta SQL
-            query = f"SELECT id, word, lang_word, meaning, lang_meaning, description, examples, chat_id FROM words WHERE DATE_FORMAT(scheduled, '%Y-%m-%d %H:%i') = '{fecha_hora_actual}'"
+            query = f'''SELECT id, word, lang_word, meaning, lang_meaning, description, examples, chat_id FROM words 
+            WHERE DATE_FORMAT(scheduled, '%Y-%m-%d %H:%i') = '{fecha_hora_actual}' AND remind = true'''
 
             lista = []
             
@@ -302,7 +303,7 @@ def query_update_word(word):
         try:
             
             cursor = conexion.cursor()
-            sql = f"UPDATE words SET word = %s, meaning = %s, description = %s, examples = %s WHERE id = {word.id}"
+            sql = f"UPDATE words SET word = %s, meaning = %s, description = %s, examples = %s, remind = true WHERE id = {word.id}"
             
             parametros = (word.word, word.meaning, word.description, word.examples)
             cursor.execute(sql, parametros)
@@ -347,6 +348,40 @@ def query_delete_word(word_id):
             print('Error actualizando palabras')
             print(err)
             return "error"
+    finally:
+        if conexion.is_connected():
+            conexion.close()
+
+
+# funcion para olvidar una palabra
+def query_unschedule_word(word_id):
+    try:
+        conexion = mysql.connector.connect(
+            host=MYSQL_HOST,
+            user=MYSQL_USERNAME,
+            password=MYSQL_PASSWORD,
+            port=MYSQL_PORT,
+            database=MYSQL_DATABASE)
+
+        print(conexion)
+    except Exception as err:
+        print('Error creando la conexión')
+        print(err)
+        return "error"
+    else:
+        try:
+            cursor = conexion.cursor()
+            sql = f"UPDATE words SET remind = false WHERE id = {word_id}"
+
+            cursor.execute(sql)
+            conexion.commit()
+
+            return "success"
+
+        except Exception as err:
+            print('Error actualizando palabras')
+            print(err)
+            return str(err)
     finally:
         if conexion.is_connected():
             conexion.close()

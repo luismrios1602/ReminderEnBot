@@ -397,6 +397,11 @@ def inline_buttom(call):
         word = dropEspecialCaracters(current_words[chatId].word)
         send_pronunciation(word, lang_word, chatId, messageId)
 
+    #Verificamos si quiere olvidar la palabra (el boton envia unsche_id)
+    elif call.data.split("_")[0] == 'unsche':
+        id_word = call.data.split("_")[1] 
+        unschedule_word(id_word, chatId)
+        
     # Si no es ninguno es porque es pronunciacion
     else:
         try:
@@ -682,7 +687,7 @@ def update_current_examples(message):
 
 #endregion 
 
-#region === METODOS DE BUSQUEDA === 
+#region === METODOS DE BUSQUEDA Y PROGRAMACION === 
 #funcion para consultar las palabras programadas para el día hoy
 def search_words_today():
     
@@ -725,8 +730,9 @@ def search_words_today():
             chatId = word.chatId
             markup = InlineKeyboardMarkup(row_width = 2)
             btn_pronunciacion = InlineKeyboardButton(f"🔊 Pronunciación", callback_data=f"{word.word}")
+            btn_olvidar = InlineKeyboardButton(f"🧠 Olvidar", callback_data=f"unsche_{word.id}")
             
-            markup.add(btn_pronunciacion)
+            markup.add(btn_pronunciacion, btn_olvidar)
 
             message = format_word(word)
             current_words[chatId] = WordClass()
@@ -773,12 +779,27 @@ def reschedule_words_earlier():
         resp = query_reschedule_word(word)
         print(resp)
 
+#funcion para olvidar una palabra para no volverla a enviar
+def unschedule_word(id_word, chatId):
+    unscheduled = query_unschedule_word(id_word);
+
+    if unscheduled == 'success':
+        response = '✅🧠 Palabra olvidada exitosamente. Para activarla nuevamente puede buscarla y editarla'
+        response = escapar_caracteres_especiales(response)
+
+        bot.send_message(chatId, response, parse_mode="MarkdownV2", disable_web_page_preview=True)
+    else:
+        bot.send_message(chatId, f"😪 Ups... Error al guardar la palabra.\n\nCausa:`{unscheduled}`")
+    
+    
 #endregion 
 
 #region === METODOS DE UPDATE Y DELETE WORDS === 
 #funcion para editar toda la palabra
 def update_word(word):
     updated = query_update_word(word)
+    #Reprogramamos la palabra
+    updated = query_reschedule_word(word)
     return updated
 
 #funcion para eliminar la palabra que el usuario elija eliminar
