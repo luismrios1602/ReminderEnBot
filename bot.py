@@ -781,16 +781,27 @@ def reschedule_words_earlier():
 
 #funcion para olvidar una palabra para no volverla a enviar
 def unschedule_word(id_word, chatId):
-    unscheduled = query_unschedule_word(id_word);
+    #Primero buscamos la palabra para ver si existe ese id
+    word_found = query_select_word_by_id(id_word, chatId)
 
-    if unscheduled == 'success':
-        response = '✅🧠 Palabra olvidada exitosamente. Para activarla nuevamente puede buscarla y editarla'
-        response = escapar_caracteres_especiales(response)
+    if word_found == 'error':
+        bot.send_message(chatId, f"😪 Ups... Error al guardar la palabra.")
+        return 
 
-        bot.send_message(chatId, response, parse_mode="MarkdownV2", disable_web_page_preview=True)
-    else:
-        bot.send_message(chatId, f"😪 Ups... Error al guardar la palabra.\n\nCausa:`{unscheduled}`")
-    
+    #Si no hubo error revisamos si existe la palabra
+    if word_found:
+        unscheduled = query_unschedule_word(id_word)
+
+        if unscheduled == 'success':
+            response = f'✅🧠 Palabra *{word_found.word}* olvidada exitosamente. Para activarla nuevamente puede buscarla y editarla'
+            response = escapar_caracteres_especiales(response)
+
+            bot.send_message(chatId, response, parse_mode="MarkdownV2", disable_web_page_preview=True)
+        else:
+            bot.send_message(chatId, f"😪 Ups... Error al guardar la palabra.\n\nCausa:`{unscheduled}`")
+    else: 
+        
+        bot.send_message(chatId, f"🧐 Palabra a olvidar ({id_word}) no reconocida.`")
     
 #endregion 
 
@@ -883,10 +894,6 @@ def send_pronunciation(word, lang, chatId, messageId):
         bot.send_message(chatId, f"😪 Ups... Error al reproducir la palabra.\n\n Causa:`{str(err)}`")
         print(err)
     
-
-    
-        
-
 #endregion 
 
 #region === METODOS DE INICIO DEL BOT === 

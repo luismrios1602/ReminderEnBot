@@ -145,6 +145,53 @@ def query_select_word(word, chatId):
         if conexion.is_connected():
             conexion.close()
 
+#funcion para consultar una sola palabra
+def query_select_word_by_id(idWord, chatId):
+    try: 
+        conexion = mysql.connector.connect(
+            host = MYSQL_HOST, 
+            user = MYSQL_USERNAME,
+            password = MYSQL_PASSWORD,
+            port = MYSQL_PORT,
+            database = MYSQL_DATABASE)
+        
+        print(conexion)
+    except Exception as err:
+        print('Error creando la conexión')
+        print(err)
+        return "error"
+    else:
+        try:
+            print('Conectado a la BD')
+            # Obtener la fecha y hora actuales en formato AAAA-MM-DD HH:MM
+            fecha_hora_actual = datetime.datetime.now().strftime('%Y-%m-%d %H:%M')
+
+            # Construir y ejecutar la consulta SQL
+            query = f"SELECT id, word, lang_word, meaning, lang_meaning, description, examples, chat_id FROM words WHERE id = %s AND chat_id = {chatId}"
+            
+            parametros = list([idWord])
+            cursor = conexion.cursor()
+            cursor.execute(query, parametros)
+
+            #Cada registro viene como una tupla, entonces basados en la tupla creamos un objeto tipo word
+            lista = cursor.fetchall()
+            print(f'Palabras encontradas: {len(lista)}')
+            if len(lista) > 0:
+                #Si sí hay datos, nos traemos el primero, como es una lista de tuplas toca el 0-0
+                word_found = WordClass(lista[0][0], lista[0][1], lista[0][2], lista[0][3], lista[0][4], lista[0][5], lista[0][6], lista[0][7])
+                print(word_found)
+                return word_found
+            else:
+                return None
+
+        except Exception as err:
+            print('Error consultando palabras')
+            print(err)
+            return "error"
+    finally:
+        if conexion.is_connected():
+            conexion.close()
+
 #función para consultar las palabras programadas para ahora 
 def query_select_all(chatId):
     try: 
