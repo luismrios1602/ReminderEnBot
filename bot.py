@@ -397,10 +397,52 @@ def inline_buttom(call):
         word = dropEspecialCaracters(current_words[chatId].word)
         send_pronunciation(word, lang_word, chatId, messageId)
 
+    elif call.data.split("_")[0] == 'forget':
+        id_word = call.data.split("_")[1]
+        # Colocamos como palabra actual la palabra que queremos olvidar
+        current_words[chatId] = WordClass(id=id_word)
+
+        # Mostramos los botones de tiempo a reprogramar
+        markup = InlineKeyboardMarkup(row_width=2)
+        btn_1_month = InlineKeyboardButton(f"1️⃣ Mes", callback_data="resche_1") #El numero es la cantidad de meses
+        btn_3_month = InlineKeyboardButton(f"3️⃣ Meses", callback_data="resche_3")
+        btn_6_month = InlineKeyboardButton(f"6️⃣ Meses", callback_data="resche_6")
+        btn_12_month = InlineKeyboardButton(f"1️⃣ Año", callback_data="resche_12")
+        btn_for_ever = InlineKeyboardButton(f"✖️ No recordar", callback_data=f"unsche_{id_word}")
+
+        markup.add(btn_1_month, btn_3_month, btn_6_month, btn_12_month, btn_for_ever)
+
+        mensaje = f" 🧠 Olvidar *{current_words[chatId].word}*\n¿Por cuánto tiempo deseas que se reprograme la palabra?\n"
+        mensaje = escapar_caracteres_especiales(mensaje)
+
+        bot.send_message(chatId, mensaje, parse_mode="MarkdownV2", reply_markup=markup)
+
+    # Verificamos si quiere reprogramar la palabra (el boton envia la cantidad de meses a reprogramar)
+    elif call.data.split("_")[0] == 'resche':
+        months = call.data.split("_")[1] 
+
+        #Primero nos aseguramos que sea un número
+        if  not months.isnumeric():
+            mensaje = '🤔 La cantidad escogida no es un número'
+            mensaje = escapar_caracteres_especiales(mensaje)
+            bot.send_message(chatId, mensaje)
+            return 
+
+        # Sabiendo que es un numero, llamamos al preprogramar para que reprograme la palabra actual
+        reschedule_word(chatId, months)
+
+        # Al final elimino el mensaje donde mostraba la palabra salga error o no y limpio el current word
+        bot.delete_message(chatId, messageId)
+        current_words[chatId] = WordClass()
+
     #Verificamos si quiere olvidar la palabra (el boton envia unsche_id)
     elif call.data.split("_")[0] == 'unsche':
         id_word = call.data.split("_")[1] 
         unschedule_word(id_word, chatId)
+
+        # Al final elimino el mensaje donde mostraba la palabra salga error o no y limpio el current word
+        bot.delete_message(chatId, messageId)
+        current_words[chatId] = WordClass()
         
     # Si no es ninguno es porque es pronunciacion
     else:
@@ -730,7 +772,7 @@ def search_words_today():
             chatId = word.chatId
             markup = InlineKeyboardMarkup(row_width = 2)
             btn_pronunciacion = InlineKeyboardButton(f"🔊 Pronunciación", callback_data=f"{word.word}")
-            btn_olvidar = InlineKeyboardButton(f"🧠 Olvidar", callback_data=f"unsche_{word.id}")
+            btn_olvidar = InlineKeyboardButton(f"🧠 Olvidar", callback_data=f"forget_{word.id}")
             
             markup.add(btn_pronunciacion, btn_olvidar)
 
@@ -779,6 +821,34 @@ def reschedule_words_earlier():
         resp = query_reschedule_word(word)
         print(resp)
 
+#funcion para reprogramar una palabra según los días especificados
+def reschedule_word(chatId, months):
+    # Debemos verificar primero si hay una palabra actual seleccionada
+    if chatId in current_words:
+        word = current_words[chatId]
+        print(f'{word}')
+        word = query_select_word_by_id(word.id, chatId)
+
+        if word == None:
+            mensaje = '🤔 No se ha encontrado la palabra con id seleccionado'
+            mensaje = escapar_caracteres_especiales(mensaje)
+            bot.send_message(chatId, mensaje)
+
+        # Si la palabra existe, convertimos la cantidad de meses a días
+        word.daysSchedule = int(months) * 30
+        resp = query_reschedule_word(word)
+
+        if resp == 'success':
+            mensaje = f'🧠✅ Palabra *{word.word}* reprogramada exitosamente\\.\n_Recuerde que ahora la aleatoriedad en la que se reprograma esta palabra pasa de 7 a {word.daysSchedule} días\\._ '
+            bot.send_message(chatId, mensaje, parse_mode="MarkdownV2")
+        else:
+            bot.send_message(chatId, f"😪 Ups... Hubo un error al reprogramar la palabra.\n Consulte la palabra e intente olvidarla nuevamente. ")
+
+    else:
+        mensaje = '🤔 No hay una palabra actual para reprogramar, consultela nuevamente'
+        mensaje = escapar_caracteres_especiales(mensaje)
+        bot.send_message(chatId, mensaje)
+    
 #funcion para olvidar una palabra para no volverla a enviar
 def unschedule_word(id_word, chatId):
     #Primero buscamos la palabra para ver si existe ese id
@@ -789,20 +859,23 @@ def unschedule_word(id_word, chatId):
         return 
 
     #Si no hubo error revisamos si existe la palabra
-    if word_found:
-        unscheduled = query_unschedule_word(id_word)
-
-        if unscheduled == 'success':
-            response = f'✅🧠 Palabra *{word_found.word}* olvidada exitosamente. Para activarla nuevamente puede buscarla y editarla'
-            response = escapar_caracteres_especiales(response)
-
-            bot.send_message(chatId, response, parse_mode="MarkdownV2", disable_web_page_preview=True)
-        else:
-            bot.send_message(chatId, f"😪 Ups... Error al guardar la palabra.\n\nCausa:`{unscheduled}`")
-    else: 
-        
+    if word_found == None:
         bot.send_message(chatId, f"🧐 Palabra a olvidar ({id_word}) no reconocida.`")
     
+    #Si encontramos la palabra, la olvidamos
+    unscheduled = query_unschedule_word(id_word)
+
+    if unscheduled == 'success':
+        response = f'✅🧠 Palabra *{word_found.word}* olvidada exitosamente. Para activarla nuevamente puede buscarla y editarla'
+        response = escapar_caracteres_especiales(response)
+
+        bot.send_message(chatId, response, parse_mode="MarkdownV2", disable_web_page_preview=True)
+        
+    else:
+        bot.send_message(chatId, f"😪 Ups... Error al guardar la palabra.\n\nCausa:`{unscheduled}`")
+    
+
+
 #endregion 
 
 #region === METODOS DE UPDATE Y DELETE WORDS === 

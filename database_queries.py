@@ -24,7 +24,7 @@ def query_create_word(objWord, chatId):
             print('Conectado a la BD')
             
             # Generar fecha y hora aleatorias
-            fecha_aleatoria = generar_fecha_aleatoria()
+            fecha_aleatoria = generar_fecha_aleatoria(7) #Mandamos 7 días por defecto
             hora_aleatoria = generar_hora_aleatoria()
             # Combinar fecha y hora en un objeto datetime
             fecha_hora_aleatoria = datetime.datetime.combine(fecha_aleatoria.date(), hora_aleatoria.time())
@@ -71,7 +71,7 @@ def query_select_words():
             print('consultando palabras para ahora...')
 
             # Construir y ejecutar la consulta SQL
-            query = f'''SELECT id, word, lang_word, meaning, lang_meaning, description, examples, chat_id FROM words 
+            query = f'''SELECT id, word, lang_word, meaning, lang_meaning, description, examples, chat_id, days_schedule FROM words 
             WHERE DATE_FORMAT(scheduled, '%Y-%m-%d %H:%i') = '{fecha_hora_actual}' AND remind = true'''
 
             lista = []
@@ -120,7 +120,7 @@ def query_select_word(word, chatId):
             print(f'Palabra {word}...')
 
             # Construir y ejecutar la consulta SQL
-            query = f"SELECT id, word, lang_word, meaning, lang_meaning, description, examples, chat_id FROM words WHERE word = %s AND chat_id = {chatId}"
+            query = f"SELECT id, word, lang_word, meaning, lang_meaning, description, examples, chat_id, days_schedule FROM words WHERE word = %s AND chat_id = {chatId}"
             
             parametros = list([word])
             cursor = conexion.cursor()
@@ -131,7 +131,7 @@ def query_select_word(word, chatId):
             print(f'Palabras encontradas: {len(lista)}')
             if len(lista) > 0:
                 #Si sí hay datos, nos traemos el primero, como es una lista de tuplas toca el 0-0
-                word_found = WordClass(lista[0][0], lista[0][1], lista[0][2], lista[0][3], lista[0][4], lista[0][5], lista[0][6], lista[0][7])
+                word_found = WordClass(lista[0][0], lista[0][1], lista[0][2], lista[0][3], lista[0][4], lista[0][5], lista[0][6], lista[0][7], lista[0][8])
                 print(word_found)
                 return word_found
             else:
@@ -167,7 +167,7 @@ def query_select_word_by_id(idWord, chatId):
             fecha_hora_actual = datetime.datetime.now().strftime('%Y-%m-%d %H:%M')
 
             # Construir y ejecutar la consulta SQL
-            query = f"SELECT id, word, lang_word, meaning, lang_meaning, description, examples, chat_id FROM words WHERE id = %s AND chat_id = {chatId}"
+            query = f"SELECT id, word, lang_word, meaning, lang_meaning, description, examples, chat_id, days_schedule FROM words WHERE id = %s AND chat_id = {chatId}"
             
             parametros = list([idWord])
             cursor = conexion.cursor()
@@ -178,7 +178,7 @@ def query_select_word_by_id(idWord, chatId):
             print(f'Palabras encontradas: {len(lista)}')
             if len(lista) > 0:
                 #Si sí hay datos, nos traemos el primero, como es una lista de tuplas toca el 0-0
-                word_found = WordClass(lista[0][0], lista[0][1], lista[0][2], lista[0][3], lista[0][4], lista[0][5], lista[0][6], lista[0][7])
+                word_found = WordClass(lista[0][0], lista[0][1], lista[0][2], lista[0][3], lista[0][4], lista[0][5], lista[0][6], lista[0][7], lista[0][8])
                 print(word_found)
                 return word_found
             else:
@@ -216,7 +216,7 @@ def query_select_all(chatId):
             print(f'consultando todas las palabras de {chatId} ...')
 
             # Construir y ejecutar la consulta SQL
-            query = f"SELECT id, word, lang_word, meaning, lang_meaning, description, examples, chat_id FROM words WHERE chat_id = {chatId} ORDER BY word"
+            query = f"SELECT id, word, lang_word, meaning, lang_meaning, description, examples, chat_id, days_schedule FROM words WHERE chat_id = {chatId} ORDER BY word"
 
             lista = []
             
@@ -264,7 +264,7 @@ def query_search_expired_words():
             print(f'consultando todas las palabras vencidas ...')
 
             # Construir y ejecutar la consulta SQL
-            query = f"SELECT id FROM words WHERE scheduled < NOW() ORDER BY id"
+            query = f"SELECT id, days_schedule FROM words WHERE scheduled < NOW() ORDER BY id"
 
             lista = []
             
@@ -273,7 +273,7 @@ def query_search_expired_words():
 
             #Cada registro viene como una tupla, entonces basados en la tupla creamos un objeto tipo word
             for word_found in cursor:
-                word = WordClass(*word_found)
+                word = WordClass(id=word_found[0], daysSchedule=word_found[1])
                 print(word)
                 lista.append(word)
 
@@ -290,6 +290,7 @@ def query_search_expired_words():
 
 #funcion para reprogramar una palabra que haya sido encontrada en la consulta de vencidas o mostrada el día de hoy
 def query_reschedule_word(word):
+    print(word)
     try: 
         conexion = mysql.connector.connect(
             host = MYSQL_HOST, 
@@ -307,12 +308,12 @@ def query_reschedule_word(word):
         try:
             print('Conectado a la BD')
             # Generar fecha y hora aleatorias
-            fecha_aleatoria = generar_fecha_aleatoria()
+            fecha_aleatoria = generar_fecha_aleatoria(word.daysSchedule)
             hora_aleatoria = generar_hora_aleatoria()
             # Combinar fecha y hora en un objeto datetime
             fecha_hora_aleatoria = datetime.datetime.combine(fecha_aleatoria.date(), hora_aleatoria.time())
             
-            print('Reprogramando palabras ... ')
+            print(f'Reprogramando palabra {word.id} - fecha: {fecha_hora_aleatoria}... ')
 
             cursor = conexion.cursor()
             sql = f"UPDATE words SET scheduled = %s WHERE id = %s"
@@ -433,9 +434,9 @@ def query_unschedule_word(word_id):
         if conexion.is_connected():
             conexion.close()
 
-# Función para generar una fecha aleatoria entre 1 y 7 días después de la fecha actual
-def generar_fecha_aleatoria():
-    dias_aleatorios = random.randint(1, 7)
+# Función para generar una fecha aleatoria entre 1 y los días días enviados (7 por defecto) después de la fecha actual
+def generar_fecha_aleatoria(dias):
+    dias_aleatorios = random.randint(1, dias) 
     fecha_actual = datetime.datetime.now()
     fecha_aleatoria = fecha_actual + datetime.timedelta(days=dias_aleatorios)
     return fecha_aleatoria
