@@ -343,7 +343,7 @@ def inline_buttom(call):
             bot.send_message(call.message.chat.id, mensaje, parse_mode="MarkdownV2", reply_markup=markup)
 
         except Exception as err:
-            prin(err)
+            print(err)
             bot.send_message(call.message.chat.id, f"😪 Ups... Se ha presentado un error")
 
     elif call.data in ['word_EN', 'word_ES', 'word_BR', 'word_FR', 'word_IT']:
@@ -415,7 +415,8 @@ def inline_buttom(call):
         mensaje = f" 🧠 Olvidar *{current_words[chatId].word}*\n¿Por cuánto tiempo deseas que se reprograme la palabra?\n"
         mensaje = escapar_caracteres_especiales(mensaje)
 
-        bot.send_message(chatId, mensaje, parse_mode="MarkdownV2", reply_markup=markup)
+        # bot.send_message(chatId, mensaje, parse_mode="MarkdownV2", reply_markup=markup)
+        bot.edit_message_reply_markup(chat_id=chatId, message_id=messageId, reply_markup=markup)
 
     # Verificamos si quiere reprogramar la palabra (el boton envia la cantidad de meses a reprogramar)
     elif call.data.split("_")[0] == 'resche':
