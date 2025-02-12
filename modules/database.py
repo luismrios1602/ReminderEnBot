@@ -1,20 +1,21 @@
 from config import MYSQL_HOST, MYSQL_USERNAME, MYSQL_PASSWORD, MYSQL_DATABASE, MYSQL_PORT, HORA_MORNING, HORA_NIGHT
-from WordClass import WordClass
+from classes import WordClass
 import mysql.connector
 import random
 import datetime
 
+def connect():
+    return mysql.connector.connect(
+        host=MYSQL_HOST,
+        user=MYSQL_USERNAME,
+        password=MYSQL_PASSWORD,
+        port=MYSQL_PORT,
+        database=MYSQL_DATABASE)
+
 #funcion para crear el audio en la bd
 def query_create_word(objWord, chatId):
     try: 
-        conexion = mysql.connector.connect(
-            host = MYSQL_HOST, 
-            user = MYSQL_USERNAME,
-            password = MYSQL_PASSWORD,
-            port = MYSQL_PORT,
-            database = MYSQL_DATABASE)
-        
-        print(conexion)
+        conexion = connect()
     except Exception as err:
         print('Error creando la conexión')
         print(err)
@@ -48,16 +49,9 @@ def query_create_word(objWord, chatId):
         return "success"
 
 #función para consultar las palabras programadas para ahora 
-def query_select_words():
+def query_select_scheduled_words():
     try: 
-        conexion = mysql.connector.connect(
-            host = MYSQL_HOST, 
-            user = MYSQL_USERNAME,
-            password = MYSQL_PASSWORD,
-            port = MYSQL_PORT,
-            database = MYSQL_DATABASE)
-        
-        print(conexion)
+        conexion = connect()
     except Exception as err:
         print('Error creando la conexión')
         print(err)
@@ -99,14 +93,7 @@ def query_select_words():
 #funcion para consultar una sola palabra
 def query_select_word(word, chatId):
     try: 
-        conexion = mysql.connector.connect(
-            host = MYSQL_HOST, 
-            user = MYSQL_USERNAME,
-            password = MYSQL_PASSWORD,
-            port = MYSQL_PORT,
-            database = MYSQL_DATABASE)
-        
-        print(conexion)
+        conexion = connect()
     except Exception as err:
         print('Error creando la conexión')
         print(err)
@@ -148,14 +135,7 @@ def query_select_word(word, chatId):
 #funcion para consultar una sola palabra
 def query_select_word_by_id(idWord, chatId):
     try: 
-        conexion = mysql.connector.connect(
-            host = MYSQL_HOST, 
-            user = MYSQL_USERNAME,
-            password = MYSQL_PASSWORD,
-            port = MYSQL_PORT,
-            database = MYSQL_DATABASE)
-        
-        print(conexion)
+        conexion = connect()
     except Exception as err:
         print('Error creando la conexión')
         print(err)
@@ -195,14 +175,7 @@ def query_select_word_by_id(idWord, chatId):
 #función para consultar las palabras programadas para ahora 
 def query_select_all(chatId):
     try: 
-        conexion = mysql.connector.connect(
-            host = MYSQL_HOST, 
-            user = MYSQL_USERNAME,
-            password = MYSQL_PASSWORD,
-            port = MYSQL_PORT,
-            database = MYSQL_DATABASE)
-        
-        print(conexion)
+        conexion = connect()
     except Exception as err:
         print('Error creando la conexión')
         print(err)
@@ -243,14 +216,7 @@ def query_select_all(chatId):
 #funcion para consultar todas las palabras vencidas a renovar
 def query_search_expired_words():
     try: 
-        conexion = mysql.connector.connect(
-            host = MYSQL_HOST, 
-            user = MYSQL_USERNAME,
-            password = MYSQL_PASSWORD,
-            port = MYSQL_PORT,
-            database = MYSQL_DATABASE)
-        
-        print(conexion)
+        conexion = connect()
     except Exception as err:
         print('Error creando la conexión')
         print(err)
@@ -292,14 +258,7 @@ def query_search_expired_words():
 def query_reschedule_word(word):
     print(word)
     try: 
-        conexion = mysql.connector.connect(
-            host = MYSQL_HOST, 
-            user = MYSQL_USERNAME,
-            password = MYSQL_PASSWORD,
-            port = MYSQL_PORT,
-            database = MYSQL_DATABASE)
-        
-        print(conexion)
+        conexion = connect()
     except Exception as err:
         print('Error creando la conexión')
         print(err)
@@ -335,14 +294,7 @@ def query_reschedule_word(word):
 #funcion para editar una palabra especifica
 def query_update_word(word):
     try: 
-        conexion = mysql.connector.connect(
-            host = MYSQL_HOST, 
-            user = MYSQL_USERNAME,
-            password = MYSQL_PASSWORD,
-            port = MYSQL_PORT,
-            database = MYSQL_DATABASE)
-        
-        print(conexion)
+        conexion = connect()
     except Exception as err:
         print('Error creando la conexión')
         print(err)
@@ -369,14 +321,7 @@ def query_update_word(word):
 
 def query_delete_word(word_id):
     try: 
-        conexion = mysql.connector.connect(
-            host = MYSQL_HOST, 
-            user = MYSQL_USERNAME,
-            password = MYSQL_PASSWORD,
-            port = MYSQL_PORT,
-            database = MYSQL_DATABASE)
-        
-        print(conexion)
+        conexion = connect()
     except Exception as err:
         print('Error creando la conexión')
         print(err)
@@ -404,14 +349,7 @@ def query_delete_word(word_id):
 # funcion para olvidar una palabra
 def query_unschedule_word(word_id):
     try:
-        conexion = mysql.connector.connect(
-            host=MYSQL_HOST,
-            user=MYSQL_USERNAME,
-            password=MYSQL_PASSWORD,
-            port=MYSQL_PORT,
-            database=MYSQL_DATABASE)
-
-        print(conexion)
+        conexion = connect()
     except Exception as err:
         print('Error creando la conexión')
         print(err)
