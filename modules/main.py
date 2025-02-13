@@ -1,15 +1,11 @@
+import os
+
 from modules import database, response_message
 from classes import WordClass
-from utils import utils
+from gtts import gTTS
 
 # diccionario principal con los datos de la palabra actual de cada usuario, para que no se convinen
 current_words = {}
-
-# funcion para cancelar la transacción
-def cancel_process(chatId):
-    # si le da clic en cancelar, limpiamos los pasos porque hay que empezar de nuevo
-    global current_words
-    current_words[chatId] = WordClass()
 
 def clear_current_word(chatId): 
     global current_words
@@ -52,6 +48,7 @@ def select_current_word(chatId):
 def assign_current_word(chatId, word, id=None):
     global current_words
     current_words[chatId] = WordClass(word=word, id=id)
+    return current_words.get(chatId, None)
 
 def register_id_current_word(chatId, id):
     global current_words
@@ -183,7 +180,7 @@ def reschedule_word(objWord):
     return database.query_reschedule_word(objWord)
 
 # funcion para reprogramar una palabra según los días especificados
-def forget_word(chatId, months):
+def reschedule_current_word(chatId, months):
     # Debemos verificar primero si hay una palabra actual seleccionada
     cur_word = select_current_word(chatId) #Deberia traer el id al clicar asignado en el boton de forget
     if cur_word is None:
@@ -204,3 +201,66 @@ def forget_word(chatId, months):
     else:
         return response_message.error_reschedule_word()
 
+# funcion para olvidar una palabra para no volverla a enviar
+def forget_word_by_id(chatId, id_word):
+    # Primero buscamos la palabra para ver si existe ese id
+    word_found = database.query_select_word_by_id(id_word, chatId)
+
+    if word_found == 'error':
+        return response_message.error_forget_word()
+
+    # Si no hubo error revisamos si existe la palabra
+    if word_found == None:
+        return response_message.no_word_by_id()
+
+    # Si encontramos la palabra, la olvidamos
+    unscheduled = database.query_unschedule_word(id_word)
+
+    if unscheduled == 'success':
+        return response_message.success_forget_word(word_found.word)
+    else:
+        return response_message.error_forget_word()
+    
+# funcion para reprogramar palabras que no pudieron ser enviadas
+def reschedule_words_earlier():
+    # Primero consultamos las palabras vencidas de todos los usuarios
+    words_found = database.query_search_expired_words()
+    for word in words_found:
+        resp = database.query_reschedule_word(word)
+        print(resp)
+
+# funcion para enviar pronunciacion TODO: Quitarlo de aqui y pasarlo para el main cuando todo funcione
+def get_pronunciation(word, lang, ):
+    try:
+        global current_words
+        accents = {
+            'EN': 'us',
+            'ES': 'es',
+            'PT': 'com.br',
+            'FR': 'fr',
+            'IT': 'it'
+        }
+        # si es brasileño tenemos que pasarlo a portugues
+        lang = 'PT' if lang == 'BR' else lang
+
+        tts = gTTS(text=f' {word}', lang=f'{lang.lower()}', tld=f'{accents[lang]}')
+        tts.save(f'{word}.mp3')  # Guarda el archivo de audio
+
+        # Envía el archivo de audio al usuario
+        voice_message = open(f'{word}.mp3', 'rb')
+        return (voice_message, 'Audio creado exitosamente')
+        
+    except Exception as err:
+        return (None, response_message.error_playing_word(err))
+
+#funcion para tomar un archivo enviado como audio y eliminarlo del servidor
+def close_and_delete_voice(voice_pronunciation, word):
+    try: 
+        # Cierra el archivo después de enviarlo
+        voice_pronunciation.close()
+
+        # Elimina el archivo del sistema
+        os.remove(f'{word}.mp3')
+
+    except Exception as err:
+        print(f'Error al cerrar el archivo {word}: {err}')

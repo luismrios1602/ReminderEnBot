@@ -1,4 +1,3 @@
-import os
 import time
 import telebot
 import threading
@@ -67,7 +66,7 @@ def bot_message_text(message):
     #evitamos que manden comandos que no existen en vez de mensajes 
     if message_text and message_text.startswith("/"):
         if message_text == '/cancel':
-            main.cancel_process(chatId)
+            main.clear_current_word(chatId)
             send_cancel_message(chatId)
         else: 
             bot.send_message(message.chat.id, "¿Ese comando qué?")
@@ -101,7 +100,7 @@ def inline_buttom(call):
     pag_user = [objeto for objeto in pagination if objeto["message"] == messageId] 
 
     if call.data == 'cancelar':
-        main.cancel_process(chatId)
+        main.clear_current_word(chatId)
         send_cancel_message(chatId)
         #Cuando termine elimino el mensaje    
         bot.delete_message(chatId, messageId)
@@ -313,7 +312,7 @@ def inline_buttom(call):
         # sacamos las 2 ultimas letras que contienen el codigo del idioma
         lang_word = call.data[-2:]
         word = utils.dropEspecialCaracters(current_words[chatId].word)
-        send_pronunciation(word, lang_word, chatId, messageId)
+        send_pronunciation(word, lang_word, chatId, call.message)
 
     elif call.data.split("_")[0] == 'forget':
         id_word = call.data.split("_")[1]
@@ -338,7 +337,7 @@ def inline_buttom(call):
             return 
 
         # Sabiendo que es un numero, llamamos al preprogramar para que reprograme la palabra actual
-        mensaje = main.forget_word(chatId, months)
+        mensaje = main.reschedule_current_word(chatId, months)
         bot.send_message(chatId, mensaje, parse_mode="MarkdownV2")
 
         # Al final elimino el mensaje donde mostraba la palabra salga error o no y limpio el current word
@@ -348,51 +347,18 @@ def inline_buttom(call):
     #Verificamos si quiere olvidar la palabra (el boton envia unsche_id)
     elif call.data.split("_")[0] == 'unsche':
         id_word = call.data.split("_")[1] 
-        unschedule_word(id_word, chatId)
+        mensaje = main.forget_word_by_id(chatId, id_word)
+
+        bot.send_message(chatId, mensaje, parse_mode="MarkdownV2")
 
         # Al final elimino el mensaje donde mostraba la palabra salga error o no y limpio el current word
         bot.delete_message(chatId, messageId)
-        current_words[chatId] = WordClass()
+        main.clear_current_word()
         
     # Si no es ninguno es porque es pronunciacion
     else:
-        try:
-            word = dropEspecialCaracters(call.data)
-            
-            #Validamos si la palabra actual es del usuario tiene un lenguaje. 
-            #Si no tiene un lenguaje es porque o es una palabra sin registrar o están buscando la pronunciación de una palabra programada.
-            lang_word = current_words.get(chatId, WordClass()).lang_word
-            
-            print(f'Language: {lang_word}')
-
-            if lang_word != '':
-                #limpiamos la palabra actual después de haberla enviado
-                current_words[chatId] = WordClass()
-                send_pronunciation(word, lang_word, chatId, messageId)
-            
-            else: 
-                #Si no hay lengauje es porque quiere escuchar la pronunciacion de una palabra o frase no registrada                    
-                current_words[chatId] = WordClass()
-                current_words[chatId].word = call.data #Guardamos la palabra provicionalmente
-
-                mensaje = f"🗣️ ¿En qué idioma quieres escuchar?"
-                mensaje = escapar_caracteres_especiales(mensaje)
-
-                markup = InlineKeyboardMarkup(row_width=5)
-                btn_ingles = InlineKeyboardButton(f"{emoji_flags['EN']}", callback_data="pron_EN")
-                btn_espanhol = InlineKeyboardButton(f"{emoji_flags['ES']}", callback_data="pron_ES")
-                btn_portugues = InlineKeyboardButton(f"{emoji_flags['BR']}", callback_data="pron_BR")
-                btn_frances = InlineKeyboardButton(f"{emoji_flags['FR']}", callback_data="pron_FR")
-                btn_italiano = InlineKeyboardButton(f"{emoji_flags['IT']}", callback_data="pron_IT")
-                btn_cancelar = InlineKeyboardButton("✖ Cancelar", callback_data="cancelar")
-
-                markup.add(btn_ingles, btn_espanhol, btn_portugues,btn_frances, btn_italiano, btn_cancelar)
-
-                bot.reply_to(call.message, mensaje, parse_mode="MarkdownV2",reply_markup=markup)
-
-        except Exception as err:
-            bot.send_message(chatId, f"😪 Ups... Error al reproducir la palabra.\n\n Causa:`{str(err)}`")
-            print(err)
+            word = utils.dropEspecialCaracters(call.data)
+            send_pronunciation(word, None, chatId, call.message)
         
 #endregion 
 
@@ -403,7 +369,7 @@ def step_receive_meaning(message):
     chatId = message.chat.id
 
     if message.text == '/cancel':
-      main.cancel_process(chatId)
+      main.clear_current_word(chatId)
       send_cancel_message(chatId)
       return
     
@@ -424,7 +390,7 @@ def step_receive_explain(message):
     chatId = message.chat.id
 
     if message.text == '/cancel':
-      main.cancel_process(chatId)
+      main.clear_current_word(chatId)
       send_cancel_message(chatId)
       return
     
@@ -446,7 +412,7 @@ def step_receive_examples(message):
     chatId = message.chat.id
 
     if message.text == '/cancel':
-      main.cancel_process(chatId)
+      main.clear_current_word(chatId)
       send_cancel_message(chatId)
       return
 
@@ -464,14 +430,14 @@ def step_receive_examples(message):
 
 #endregion 
 
-#region === METODOS DE UPDATE === 
+# region === METODOS DE PASOS DE RECEPCION DE DATOS PARA UPDATE ===
 #funcion para editar la propiedad word de la palabra actual del usuario
 def step_update_word_current_word(message):
     chatId = message.chat.id
     messageId = message.id
 
     if message.text == '/cancel':
-      main.cancel_process(chatId)
+      main.clear_current_word(chatId)
       send_cancel_message(chatId)
       return
     
@@ -486,7 +452,7 @@ def step_update_meaning_current_word(message):
     messageId = message.id
 
     if message.text == '/cancel':
-      main.cancel_process(chatId)
+      main.clear_current_word(chatId)
       send_cancel_message(chatId)
       return
     
@@ -501,7 +467,7 @@ def step_update_explain_current_word(message):
     messageId = message.id
 
     if message.text == '/cancel':
-      main.cancel_process(chatId)
+      main.clear_current_word(chatId)
       send_cancel_message(chatId)
       return
     
@@ -516,7 +482,7 @@ def step_update_examples_current_word(message):
     messageId = message.id
 
     if message.text == '/cancel':
-      main.cancel_process(chatId)
+      main.clear_current_word(chatId)
       send_cancel_message(chatId)
       return
     
@@ -543,6 +509,7 @@ def finish_step_update(chatId, messageId, response):
 #endregion 
 
 #region === METODOS DE BUSQUEDA Y PROGRAMACION === 
+
 #funcion para consultar las palabras programadas para el día hoy
 def search_words_today():
     #Esperamos 1 minuto para realizar la siguiente consulta
@@ -597,51 +564,6 @@ def send_cancel_message(chatId):
     bot.send_message(chatId, "❌ Acción Cancelada")
     bot.clear_step_handler_by_chat_id(chat_id=chatId)
 
-#funcion para reprogramar palabras que no pudieron ser enviadas
-def reschedule_words_earlier():
-    #Primero consultamos las palabras vencidas de todos los usuarios
-    words_found = query_search_expired_words()
-    for word in words_found:
-        resp = query_reschedule_word(word)
-        print(resp)
-    
-#funcion para olvidar una palabra para no volverla a enviar
-def unschedule_word(id_word, chatId):
-    #Primero buscamos la palabra para ver si existe ese id
-    word_found = query_select_word_by_id(id_word, chatId)
-
-    if word_found == 'error':
-        bot.send_message(chatId, f"😪 Ups... Error al guardar la palabra.")
-        return 
-
-    #Si no hubo error revisamos si existe la palabra
-    if word_found == None:
-        bot.send_message(chatId, f"🧐 Palabra a olvidar ({id_word}) no reconocida.`")
-    
-    #Si encontramos la palabra, la olvidamos
-    unscheduled = query_unschedule_word(id_word)
-
-    if unscheduled == 'success':
-        response = f'✅🧠 Palabra *{word_found.word}* olvidada exitosamente. Para activarla nuevamente puede buscarla y editarla'
-        response = escapar_caracteres_especiales(response)
-
-        bot.send_message(chatId, response, parse_mode="MarkdownV2", disable_web_page_preview=True)
-        
-    else:
-        bot.send_message(chatId, f"😪 Ups... Error al guardar la palabra.\n\nCausa:`{unscheduled}`")
-    
-
-
-#endregion 
-
-#region === METODOS DE UPDATE Y DELETE WORDS === 
-
-
-#funcion para eliminar la palabra que el usuario elija eliminar
-def delete_word(word_id):
-    deleted = query_delete_word(word_id)
-    return deleted
-
 #endregion 
 
 #region === METODOS UTILS === 
@@ -652,37 +574,40 @@ def pag_update(pag, messageId, words_all):
     pagination = [objeto for objeto in pagination if objeto["message"] != messageId]
     pagination.append({"pag":pag, "message":messageId, "words":words_all})
 
-
-#funcion para enviar pronunciacion TODO: Quitarlo de aqui y pasarlo para el main cuando todo funcione
-def send_pronunciation(word, lang, chatId, messageId):
+#funcion para enviar pronunciacion
+def send_pronunciation(word, lang, chatId, message):
     try:
-        global current_words
-        accents = {
-            'EN': 'us',
-            'ES': 'es',
-            'PT': 'com.br',
-            'FR': 'fr',
-            'IT': 'it'
-        }
-        # si es brasileño tenemos que pasarlo a portugues
-        lang = 'PT' if lang == 'BR' else lang
+        cur_word = main.select_current_word(chatId)
+        if cur_word is None:
+            mensaje = response_message.no_current_word()
+            bot.send_message(chatId, mensaje, parse_mode="MarkdownV2")
 
-        tts = gTTS(text=f' {word}', lang=f'{lang.lower()}', tld=f'{accents[lang]}')
-        tts.save(f'{word}.mp3')  # Guarda el archivo de audio
+        #Si mandan directamente el idioma es porque quieren escuchar la pronunciacion de una palabra ya elegida
+        if lang is not None:
+            cur_word.lang_word = lang
 
-        # Envía el archivo de audio al usuario
-        voice_message = open(f'{word}.mp3', 'rb')
-        bot.send_voice(chatId, voice_message, reply_to_message_id=messageId)
+        # Validamos si la palabra actual es del usuario tiene un lenguaje.
+        if cur_word.lang_word != '':
+            voice_pronunciation = main.get_pronunciation(word, cur_word.lang_word)
+            bot.send_voice(chatId, voice_pronunciation,reply_to_message_id=message.id)
 
-        # Cierra el archivo después de enviarlo
-        voice_message.close()
+            # limpiamos la palabra actual después de haberla enviado
+            main.close_and_delete_voice(voice_pronunciation, word)
+            main.clear_current_word(chatId)
 
-        # Elimina el archivo del sistema
-        os.remove(f'{word}.mp3')
+        # Si no tiene un lenguaje es porque o es una palabra sin registrar o están buscando la pronunciación de una palabra programada.
+        else:
+            # Si no hay lengauje es porque quiere escuchar la pronunciacion de una palabra o frase no registrada
+            cur_word = main.assign_current_word(chatId, word)
+            mensaje = response_message.ask_lang_listening()
+            markup = markups.language_buttons('pron')
+
+            bot.reply_to(message, mensaje, parse_mode="MarkdownV2", reply_markup=markup)
 
     except Exception as err:
-        bot.send_message(chatId, f"😪 Ups... Error al reproducir la palabra.\n\n Causa:`{str(err)}`")
         print(err)
+        mensaje = response_message.error_playing_word(err)
+        bot.send_message(chatId, mensaje)
     
 #endregion 
 
@@ -690,7 +615,7 @@ def send_pronunciation(word, lang, chatId, messageId):
 #funcion para quedarse recibiendo mensajes nuevos
 def receive_messages():
     print("Se sigue ejecutando, SIIIU")
-    reschedule_words_earlier()
+    main.reschedule_words_earlier()
     bot.infinity_polling()
 
 #funcion para iniciar hilo del bot y de consulta de palabras programadas
@@ -725,7 +650,7 @@ if __name__ == '__main__':
         telebot.types.BotCommand("/help", "Aprender a usar el bot"),
         telebot.types.BotCommand("/all", "Muestra todas las palabras registradas"),
         telebot.types.BotCommand("/cancel", "Cancela la transacción actual")
-    ]);
+    ])
 
     iniciar_bot()
 

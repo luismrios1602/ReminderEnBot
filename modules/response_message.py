@@ -96,6 +96,11 @@ def ask_examples_edited():
     mensaje = utils.escapar_caracteres_especiales(mensaje)
     return mensaje
 
+def ask_lang_listening():
+    mensaje = f"🗣️ ¿En qué idioma quieres escuchar?"
+    mensaje = utils.escapar_caracteres_especiales(mensaje)
+    return mensaje
+
 def error_manage_word():
     mensaje = f'😪 Ups... Error al gestionar la palabra.'
     mensaje = utils.escapar_caracteres_especiales(mensaje)
@@ -108,10 +113,21 @@ def error_reschedule_word():
 
 def general_error(cause):
     mensaje = f"😪 Ups... Se ha presentado un error.\n\nCausa:`{str(cause)}`"
-    return utils.escapar_caracteres_especiales(mensaje)
+    mensaje = utils.escapar_caracteres_especiales(mensaje)
+    return mensaje
 
 def error_months():
     mensaje = '🤔 La cantidad escogida no es un número'
+    mensaje = utils.escapar_caracteres_especiales(mensaje)
+    return mensaje
+
+def error_forget_word():
+    mensaje = f'😪 Ups... Error al olvidar la palabra.'
+    mensaje = utils.escapar_caracteres_especiales(mensaje)
+    return mensaje
+
+def error_playing_word(cause):
+    mensaje = f"😪 Ups... Error al reproducir la palabra.\n\n Causa:`{str(cause)}`"
     mensaje = utils.escapar_caracteres_especiales(mensaje)
     return mensaje
 
@@ -132,4 +148,9 @@ def success_delete_word(word):
 
 def success_reschedule_word(word, last_daysSchedule, new_daysSchedule):
     mensaje = f'🧠✅ Palabra *{word}* reprogramada exitosamente\\.\n_Recuerde que ahora la aleatoriedad en la que se reprograma esta palabra pasa de {last_daysSchedule} a {new_daysSchedule} días\\._ '
+    return mensaje
+
+def success_forget_word(word):
+    mensaje = f'✅🧠 Palabra *{word}* olvidada exitosamente. Para activarla nuevamente puede buscarla y editarla'
+    mensaje = utils.escapar_caracteres_especiales(mensaje)
     return mensaje
