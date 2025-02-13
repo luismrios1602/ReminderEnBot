@@ -1,14 +1,13 @@
+import os
 import time
 import telebot
 import threading
 
 from config import *
 from modules import main, markups, response_message
+from strings import emojis
 from utils import utils
 from datetime import datetime, time as hora
-from telebot.types import  InputTextMessageContent, InputMediaDocument
-from telebot.types import  InlineKeyboardMarkup, InlineKeyboardButton, InlineQueryResultVoice, ReplyKeyboardMarkup, ReplyKeyboardRemove
-from gtts import gTTS
 
 # instanciamos el bot de Telegram
 bot = telebot.TeleBot(TELEGRAM_TOKEN)
@@ -28,7 +27,7 @@ Para conocer cómo funciono, envía /help para ayuda''')
 # responde al comando /help
 @bot.message_handler(commands=["help"])
 def cmd_help(message):
-    markup = ReplyKeyboardRemove()
+    markup = markups.remove_keyboard()
     
     mensaje = ('🤖 _¿Qué puedo hacer?:_\n\n'
     '🔍 *Buscar:* Enviame una palabra, si la palabra está registrada la mostraré\\. \n\n'
@@ -48,11 +47,13 @@ def cmd_help(message):
 def cmd_mostrartodos(message):
     chatId = message.chat.id
 
-    response = main.search_all_words()
-    markup = markups.add_pag_buttons()
+    words_found, response = main.search_all_words(chatId)
+    words_all = words_found
+
+    markup = markups.pag_buttons()
 
     resp = bot.send_message(chatId, response, parse_mode="MarkdownV2", reply_markup=markup)
-    # TODO: Mover al paginar
+
     pagination.append({"pag": 0, "message": resp.id, "words": words_all})
 
 #responde a los mensajes de texto
@@ -60,7 +61,6 @@ def cmd_mostrartodos(message):
 def bot_message_text(message):
     message_text = utils.escapar_caracteres_especiales(message.text)
     chatId = message.chat.id
-    markups = None
 
     print("Message Text: "+message_text)
     #evitamos que manden comandos que no existen en vez de mensajes 
@@ -71,21 +71,16 @@ def bot_message_text(message):
         else: 
             bot.send_message(message.chat.id, "¿Ese comando qué?")
     else:  # si es un texto normal es porque debe ser una palabra y la buscamos
-        word_found = main.search_word(chatId, message_text,)
-        response = ''
+        word_found, mensaje = main.search_word(chatId, message_text,)
 
-        try: 
-            response = main.search_word(chatId, message_text)
-        except Exception as err:
-            response = f"😪 Ups... Error consultando la palabra"
-        
         #Si no hubo excepciones es porque la consulta salió correctamente
-        if word_found == 'Palabra no encontrada':
-            markups = markups.word_no_found_buttons(message_text)
+        markup = None
+        if word_found is None:
+            markup = markups.word_no_found_buttons(message_text)
         else: 
-            markups = markups.word_found_buttons(message_text)
+            markup = markups.word_found_buttons(message_text)
 
-        bot.reply_to(message, response, reply_markups=markups,  parse_mode="MarkdownV2")
+        bot.reply_to(message, mensaje, reply_markup=markup, parse_mode="MarkdownV2")
             
 
 #función para manipular los botones inline 
@@ -94,7 +89,7 @@ def inline_buttom(call):
     # print(call)
     chatId = call.from_user.id 
     messageId = call.message.id
-    global current_words, pagination, num_row
+    global pagination, num_row
 
     #Buscamos el objeto de paginacion del user actual
     pag_user = [objeto for objeto in pagination if objeto["message"] == messageId] 
@@ -127,6 +122,7 @@ def inline_buttom(call):
 
         #Si llegamos hasta aquí, validamos si al sumarle la cantidad de registros no se pasa del len
         last = cur_page + num_row
+        print(f'last: {last} | final: {final}')
         if last > final:
             #Si es mayor entonces se pasa, vamos a asignarle la cantidad que le falte
             last = cur_page + (final - cur_page )
@@ -138,7 +134,7 @@ def inline_buttom(call):
         cur_page = last
         pag_update(cur_page, messageId, words_all)
         response = response_message.show_all(cur_page, words_all)
-        markup = markups.add_pag_buttons()
+        markup = markups.pag_buttons()
         bot.edit_message_text(response, chatId, messageId, parse_mode="MarkdownV2", reply_markup=markup)
 
     elif call.data == 'pag_anterior':
@@ -164,11 +160,13 @@ def inline_buttom(call):
         cur_page = first
         pag_update(cur_page, messageId, words_all)
         response = response_message.show_all(cur_page, words_all)
-        markup = markups.add_pag_buttons()
+        markup = markups.pag_buttons()
         bot.edit_message_text(response, chatId, messageId, parse_mode="MarkdownV2", reply_markup=markup)
 
     elif call.data == 'editar':
         current_word_user = main.select_current_word(chatId)
+        print(f'Current word: {current_word_user}')
+
         if current_word_user:
             markup = markups.edit_word_buttons(current_word_user)
             mensaje = response_message.question_edit(current_word_user.word)
@@ -195,7 +193,7 @@ def inline_buttom(call):
         current_word_user = main.select_current_word(chatId)
         if current_word_user:
             markup = markups.cancel_button()
-            mensaje = response_message.ask_meaning_edited()
+            mensaje = response_message.ask_meaning_edited(current_word_user.lang_meaning)
 
             bot.send_message(chatId, mensaje, reply_markup=markup)
             bot.register_next_step_handler(call.message,step_update_meaning_current_word)
@@ -217,7 +215,7 @@ def inline_buttom(call):
             mensaje = response_message.no_current_word()
             bot.send_message(chatId, mensaje)
 
-    elif call.data == 'edit_example':
+    elif call.data == 'edit_examples':
         current_word_user = main.select_current_word(chatId)
         if current_word_user:
             markup = markups.cancel_button()
@@ -232,7 +230,7 @@ def inline_buttom(call):
 
     elif call.data == 'eliminar':
         #llamamos al metodo de eliminación de la palabra. Como viene una tupla la descomponemos en exitoso (true o false) y el mensaje 
-        deleted, resp = main.delete_word()
+        deleted, resp = main.delete_current_word(chatId)
 
         if deleted:
             #Al final elimino el mensaje donde mostraba la palabra salga error o no y limpio el current word
@@ -248,14 +246,13 @@ def inline_buttom(call):
             if not created: 
                 bot.send_message(chatId, resp)
             else: 
-                markup = markups.pronunciation_button()
-                bot.send_message(chatId, resp, reply_markup=markup,
-                                 parse_mode="MarkdownV2", disable_web_page_preview=True)
+                markup = markups.pronunciation_button(word)
+                bot.send_message(chatId, resp, reply_markup=markup, parse_mode="MarkdownV2", disable_web_page_preview=True)
 
         except Exception as err:
-            mensaje = response_message.general_error(err)
-            bot.send_message(chatId, mensaje, reply_markup=markup)
             print(err)
+            mensaje = response_message.general_error(err)
+            bot.send_message(chatId, mensaje)
 
         #Cuando termine elimino el mensaje    
         bot.delete_message(chatId, messageId)
@@ -311,14 +308,28 @@ def inline_buttom(call):
     elif call.data in ['pron_EN', 'pron_ES', 'pron_BR', 'pron_FR', 'pron_IT']:
         # sacamos las 2 ultimas letras que contienen el codigo del idioma
         lang_word = call.data[-2:]
-        word = utils.dropEspecialCaracters(current_words[chatId].word)
+        cur_word = main.select_current_word(chatId)
+
+        if cur_word is None: 
+            cur_word = main.assign_current_word(chatId, word)
+        
+        word = utils.dropEspecialCaracters(cur_word.word)
+
+        # Ponemos que responda dos mensajes mas arriba porque el id es el selector de idiomas, 1 es palabra no encontrada y 2 el mensaje del usuario
         send_pronunciation(word, lang_word, chatId, call.message)
+
+        #eliminamos el mensaje para que no escojan otro idioma
+        # bot.delete_message(chatId, messageId-1)
+        bot.delete_message(chatId, messageId)
 
     elif call.data.split("_")[0] == 'forget':
         id_word = call.data.split("_")[1]
         # Colocamos como palabra actual la palabra que queremos olvidar
-        main.register_id_current_word(chatId, id=id_word)
-        cur_word = main.select_current_word()
+        cur_word, mensaje = main.search_word_by_id(chatId, id_word)
+
+        if cur_word is None: 
+            bot.send_message(chatId, mensaje)
+            return 
 
         # Mostramos los botones de tiempo a reprogramar
         markup = markups.forget_period_buttons(id_word)
@@ -341,7 +352,7 @@ def inline_buttom(call):
         bot.send_message(chatId, mensaje, parse_mode="MarkdownV2")
 
         # Al final elimino el mensaje donde mostraba la palabra salga error o no y limpio el current word
-        main.clear_current_word()
+        main.clear_current_word(chatId)
         bot.delete_message(chatId, messageId)
 
     #Verificamos si quiere olvidar la palabra (el boton envia unsche_id)
@@ -353,7 +364,7 @@ def inline_buttom(call):
 
         # Al final elimino el mensaje donde mostraba la palabra salga error o no y limpio el current word
         bot.delete_message(chatId, messageId)
-        main.clear_current_word()
+        main.clear_current_word(chatId)
         
     # Si no es ninguno es porque es pronunciacion
     else:
@@ -417,8 +428,10 @@ def step_receive_examples(message):
       return
 
     current_word_user = main.select_current_word(chatId)
+    print(f'Palabra a guardar: {current_word_user}')
+
     if current_word_user:
-        main.register_example_current_word(chatId, message.text)
+        main.register_examples_current_word(chatId, message.text)
         markup = markups.confirm_register_buttons()
         mensaje = response_message.format_word(current_word_user)
 
@@ -442,9 +455,9 @@ def step_update_word_current_word(message):
       return
     
     new_word = utils.escapar_caracteres_especiales(message.text)
-    resp = main.update_word_current_word(chatId, new_word)
+    objWord, resp = main.update_current_word(chatId, atr='word', new_value=new_word)
 
-    finish_step_update(chatId, messageId, resp)
+    finish_step_update(chatId, messageId, objWord, resp)
 
 #funcion para editar la propiedad meaning de la palabra actual del usuario
 def step_update_meaning_current_word(message):
@@ -457,9 +470,9 @@ def step_update_meaning_current_word(message):
       return
     
     new_meaning = utils.escapar_caracteres_especiales(message.text)
-    resp = main.update_meaning_current_word(chatId, new_meaning)
+    objWord, resp = main.update_current_word(chatId, atr='meaning', new_value=new_meaning)
 
-    finish_step_update(chatId, messageId, resp)
+    finish_step_update(chatId, messageId, objWord, resp)
 
 #funcion para editar la propiedad description de la palabra actual del usuario
 def step_update_explain_current_word(message):
@@ -472,9 +485,9 @@ def step_update_explain_current_word(message):
       return
     
     new_explain = utils.escapar_caracteres_especiales(message.text)
-    resp = main.update_explain_current_word(chatId, new_explain)
+    objWord, resp = main.update_current_word(chatId, atr='description', new_value=new_explain)
 
-    finish_step_update(chatId, messageId, resp)
+    finish_step_update(chatId, messageId, objWord, resp)
 
 #funcion para editar la propiedad examples de la palabra actual del usuario
 def step_update_examples_current_word(message):
@@ -487,19 +500,18 @@ def step_update_examples_current_word(message):
       return
     
     new_examples = utils.escapar_caracteres_especiales(message.text)
-    resp = main.update_examples_current_word(chatId, new_examples)
+    objWord, resp = main.update_current_word(chatId, atr='examples', new_value=new_examples)
 
-    finish_step_update(chatId, messageId, resp)
+    finish_step_update(chatId, messageId, objWord, resp)
 
 #funcion para terminar los step de update de las update
-def finish_step_update(chatId, messageId, response):
-    # Si la respuesta de update viene Palabra no encontrada es porque hubo un error al actualizar
-    if response == 'Palabra no encontrada' or response == 'error':
-        mensaje = response_message.error_manage_word()
-        bot.send_message(chatId, mensaje, parse_mode="MarkdownV2")
+def finish_step_update(chatId, messageId, objWord, response):
+    # Si el objeto de la nueva palabra viene None es porque hubo error al actualizar
+    if objWord is None: 
+        bot.send_message(chatId, response, parse_mode="MarkdownV2")
 
     # Si no es ninguna es porque se guardó bien, entonces procedemos a mandar el mensaje de success
-    mensaje = response_message.success_update_word(response)
+    mensaje = response_message.success_update_word(objWord)
     bot.send_message(chatId, mensaje, parse_mode="MarkdownV2")
 
     # eliminamos el penultimo mensaje que es el ultimo del bot y limpiamos los pasos del proceso
@@ -549,7 +561,7 @@ def search_words_today():
         for word in words_now:
             #añadimos un markup para los botones inline en el mensaje
             chatId = word.chatId
-            markup = markups.word_reminded_buttons()
+            markup = markups.word_reminded_buttons(word)
 
             message = response_message.format_word(word)
             main.assign_current_word(chatId, word.word)
@@ -574,13 +586,17 @@ def pag_update(pag, messageId, words_all):
     pagination = [objeto for objeto in pagination if objeto["message"] != messageId]
     pagination.append({"pag":pag, "message":messageId, "words":words_all})
 
-#funcion para enviar pronunciacion
+#funcion para enviar pronunciacion. replyTo es el id del mensaje al que se quiere responder (el que tiene la palabra)
 def send_pronunciation(word, lang, chatId, message):
     try:
         cur_word = main.select_current_word(chatId)
         if cur_word is None:
-            mensaje = response_message.no_current_word()
-            bot.send_message(chatId, mensaje, parse_mode="MarkdownV2")
+            cur_word = main.assign_current_word(chatId, word)
+            mensaje = response_message.ask_lang_listening()
+            markup = markups.language_buttons('pron')
+
+            bot.reply_to(message, mensaje, parse_mode="MarkdownV2",reply_markup=markup)
+            return
 
         #Si mandan directamente el idioma es porque quieren escuchar la pronunciacion de una palabra ya elegida
         if lang is not None:
@@ -588,11 +604,22 @@ def send_pronunciation(word, lang, chatId, message):
 
         # Validamos si la palabra actual es del usuario tiene un lenguaje.
         if cur_word.lang_word != '':
-            voice_pronunciation = main.get_pronunciation(word, cur_word.lang_word)
-            bot.send_voice(chatId, voice_pronunciation,reply_to_message_id=message.id)
+            name_voice_file, mensaje = main.get_pronunciation(word, cur_word.lang_word)
 
-            # limpiamos la palabra actual después de haberla enviado
-            main.close_and_delete_voice(voice_pronunciation, word)
+            if name_voice_file is None:
+                bot.send_message(chatId, mensaje)
+                return
+            
+            voice_message = open(name_voice_file, 'rb')
+            bot.send_voice(chatId, voice_message, caption=f'{emojis.flags[cur_word.lang_word]} {word}')
+
+            # Cierra el archivo después de enviarlo
+            voice_message.close()
+
+            # Elimina el archivo del sistema
+            os.remove(name_voice_file)
+
+            #Limpiar la palabra actual
             main.clear_current_word(chatId)
 
         # Si no tiene un lenguaje es porque o es una palabra sin registrar o están buscando la pronunciación de una palabra programada.

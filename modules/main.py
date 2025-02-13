@@ -1,20 +1,23 @@
-import os
-
 from modules import database, response_message
-from classes import WordClass
+from classes.WordClass import WordClass
 from gtts import gTTS
+
+from utils import utils
 
 # diccionario principal con los datos de la palabra actual de cada usuario, para que no se convinen
 current_words = {}
 
 def clear_current_word(chatId): 
     global current_words
-    del current_words[chatId]
+    try:
+        del current_words[chatId]
+    except Exception as err:
+        print(f'El usuario {chatId} no tiene palabra actual por limpiar')
 
 # funcion para buscar todas las palabras del usuario
 def search_all_words(chatId):
     words_all = database.query_select_all(chatId)
-    return  response_message.show_all(0, words_all)
+    return  (words_all, response_message.show_all(0, words_all))
 
 def search_scheduled_words():
     return database.query_select_scheduled_words()
@@ -29,7 +32,7 @@ def search_word(chatId, word):
         # Agregamos o editamos la palabra actual del usuario con su chat_id. Porque si está en el current_words, lo va a modificar y si no es como un agregar
         current_words[chatId] = WordClass()
         current_words[chatId].word = word
-        return "Palabra no encontrada"
+        return (None, response_message.word_no_found(word))
 
     elif word_found == "error":
         raise 'Error consultando la palabra'
@@ -37,7 +40,21 @@ def search_word(chatId, word):
     # Si no es none ni error es porque encontró la palabra entonces procedemos a mostrarla
     else:
         current_words[chatId] = word_found
-        return response_message.format_word(word_found)
+        return (word_found, response_message.format_word(word_found))
+    
+def search_word_by_id(chatId, id_word):
+    global current_words
+    word_found = database.query_select_word_by_id(id_word, chatId)
+
+    if word_found == 'error': 
+        return (None, response_message.general_error('No especificado'))
+    
+    if word_found is None: 
+        return (None, response_message.word_no_found)
+    
+    #Si encontramos la palabra la colocamos como actual y la retonamos
+    current_words[chatId] = word_found
+    return (word_found, 'Palabra Encontrada')
 
 #función para buscar la palabra actual de un chat especifico
 def select_current_word(chatId):
@@ -45,34 +62,20 @@ def select_current_word(chatId):
     return current_words.get(chatId, None) #Si no está retorna None
 
 #funcion para asignarle una nueva palabra actual al usuario
-def assign_current_word(chatId, word, id=None):
+def assign_current_word(chatId, word='', id=None):
     global current_words
     current_words[chatId] = WordClass(word=word, id=id)
     return current_words.get(chatId, None)
 
-def register_id_current_word(chatId, id):
-    global current_words
-    current_words[chatId].id = id
-
 #funcion para registrar el idioma de la palabra a guardar
 def register_lang_current_word(chatId, lang):    
     global current_words
-    current_words[chatId].lang = lang
+    current_words[chatId].lang_word = lang
     return
 
 def register_meaning_current_word(chatId, meaning):
     global current_words
-    current_words[chatId].meaning = meaning
-    return
-
-def register_explain_current_word(chatId, explain):
-    global current_words
-    current_words[chatId].description = explain
-    return
-
-def register_example_current_word(chatId, example):
-    global current_words
-    current_words[chatId].example = example
+    current_words[chatId].meaning = utils.escapar_caracteres_especiales(meaning)
     return
 
 # funcion para registrar el idioma de la las traducciones de la palabra a guardar
@@ -80,6 +83,17 @@ def register_lang_meaning_current_word(chatId, lang):
     global current_words
     current_words[chatId].lang_meaning = lang
     return
+
+def register_explain_current_word(chatId, explain):
+    global current_words
+    current_words[chatId].description = utils.escapar_caracteres_especiales(explain)
+    return
+
+def register_examples_current_word(chatId, examples):
+    global current_words
+    current_words[chatId].examples = utils.escapar_caracteres_especiales(examples)
+    return
+
 
 # función para buscar la palabra actual del usuario y guardarla. Se debería llamar al finalizar la carga de los datos
 def create_current_word(chatId):
@@ -95,79 +109,34 @@ def create_current_word(chatId):
     # Si todo se guardó bien respondemos que se guardó correctamente,retornamos el mensaje a mostrar y la palabra guardada (para la pronunciacion)
     return (True, response_message.success_create_word(cur_word), cur_word.word)
     
-# funcion para editar la propiedad word de la palabra actual del usuario
-def update_word_current_word(chatId, new_word):
+# funcion para editar la propiedad (atr) de la palabra actual del usuario.
+def update_current_word(chatId, atr, new_value):
     cur_word = select_current_word(chatId)
     if cur_word is None:
-        return response_message.error_manage_word()
+        return (None, response_message.no_current_word())
     
     #Si hay una palabra actual entonces cambiamos su word y mandamos a actualizar toda la palabra
-    cur_word.word = new_word
+    setattr(cur_word, atr, new_value)
     updated = update_word(cur_word)
 
     if updated == 'success':
-        return search_word(cur_word.word)
+        return (cur_word, 'Palabra actualizada exitosamente.')
     else: 
-        return None
-
- #funcion para editar la propiedad meaning de la palabra actual del usuario
-def update_meaning_current_word(chatId, new_meaning):
-    cur_word = select_current_word(chatId)
-    if cur_word is None:
-        return response_message.error_manage_word()
-
-    # Si hay una palabra actual entonces cambiamos su word y mandamos a actualizar toda la palabra
-    cur_word.meaning = new_meaning
-    updated = update_word(cur_word)
-
-    if updated == 'success':
-        return search_word(cur_word.word)
-    else:
-        return None
-
-# funcion para editar la propiedad explain de la palabra actual del usuario
-def update_explain_current_word(chatId, new_explain):
-    cur_word = select_current_word(chatId)
-    if cur_word is None:
-        return response_message.error_manage_word()
-
-    # Si hay una palabra actual entonces cambiamos su word y mandamos a actualizar toda la palabra
-    cur_word.description = new_explain
-    updated = update_word(cur_word)
-
-    if updated == 'success':
-        return search_word(cur_word.word)
-    else:
-        return None
-    
-# funcion para editar la propiedad examples de la palabra actual del usuario
-def update_examples_current_word(chatId, new_examples):
-    cur_word = select_current_word(chatId)
-    if cur_word is None:
-        return response_message.error_manage_word()
-
-    # Si hay una palabra actual entonces cambiamos su word y mandamos a actualizar toda la palabra
-    cur_word.examples = new_examples
-    updated = update_word(cur_word)
-
-    if updated == 'success':
-        return search_word(cur_word.word)
-    else:
-        return None
+        return (None, response_message.error_manage_word())
     
 # funcion para editar toda la palabra
-def update_word(word):
-    updated = database.query_update_word(word)
+def update_word(objWord):
+    updated = database.query_update_word(objWord)
     # Reprogramamos la palabra
-    updated = database.query_reschedule_word(word)
+    updated = database.query_reschedule_word(objWord)
     return updated
 
 #funcion para eliminar una palabra de la base de datos. Retorna una tupla con el resultado exitoso (True | False) y el mensaje
-def delete_word(chatId):
+def delete_current_word(chatId):
     global current_words
     cur_word = select_current_word(chatId)
     if cur_word is None:
-        return response_message.no_current_word()
+        return (False, response_message.no_current_word())
     
     deleted = database.query_delete_word(cur_word.id)
     if deleted == 'success':
@@ -197,7 +166,7 @@ def reschedule_current_word(chatId, months):
     resp = database.query_reschedule_word(cur_word)
 
     if resp == 'success':
-        return response_message.success_reschedule_word(cur_word.word, last_daysSchedule. cur_word.daysSchedule)
+        return response_message.success_reschedule_word(cur_word.word, last_daysSchedule, cur_word.daysSchedule)
     else:
         return response_message.error_reschedule_word()
 
@@ -229,8 +198,8 @@ def reschedule_words_earlier():
         resp = database.query_reschedule_word(word)
         print(resp)
 
-# funcion para enviar pronunciacion TODO: Quitarlo de aqui y pasarlo para el main cuando todo funcione
-def get_pronunciation(word, lang, ):
+# funcion para enviar pronunciacion 
+def get_pronunciation(word, lang):
     try:
         global current_words
         accents = {
@@ -247,20 +216,7 @@ def get_pronunciation(word, lang, ):
         tts.save(f'{word}.mp3')  # Guarda el archivo de audio
 
         # Envía el archivo de audio al usuario
-        voice_message = open(f'{word}.mp3', 'rb')
-        return (voice_message, 'Audio creado exitosamente')
+        return (f'{word}.mp3', 'Audio creado exitosamente')
         
     except Exception as err:
         return (None, response_message.error_playing_word(err))
-
-#funcion para tomar un archivo enviado como audio y eliminarlo del servidor
-def close_and_delete_voice(voice_pronunciation, word):
-    try: 
-        # Cierra el archivo después de enviarlo
-        voice_pronunciation.close()
-
-        # Elimina el archivo del sistema
-        os.remove(f'{word}.mp3')
-
-    except Exception as err:
-        print(f'Error al cerrar el archivo {word}: {err}')

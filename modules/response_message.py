@@ -27,7 +27,7 @@ def format_word(word):
 
 {emojis.explain} {word.description}
 
-{emojis.example} {word.examples}
+{emojis.examples} {word.examples}
 
 {emojis.flags[word.lang_meaning]} ||{word.meaning}|| '''
 
@@ -38,6 +38,11 @@ def no_current_word():
 
 def no_word_by_id():
     mensaje = '🤔 No se ha encontrado la palabra con id seleccionado'
+    mensaje = utils.escapar_caracteres_especiales(mensaje)
+    return mensaje
+
+def word_no_found(word):
+    mensaje = f'🔎 Palabra *{word}* no encontrada'
     mensaje = utils.escapar_caracteres_especiales(mensaje)
     return mensaje
 
@@ -53,7 +58,7 @@ def question_forget_period(word):
 
 def ask_meaning_register():
     mensaje = f"🌎 Ingrese su(s) traducción(es): "
-    mensaje =utils.escapar_caracteres_especiales(mensaje)
+    mensaje = utils.escapar_caracteres_especiales(mensaje)
     return mensaje
 
 def ask_lang_meaning_register():
@@ -67,7 +72,7 @@ def ask_explain_register():
     return mensaje
 
 def ask_examples_register():
-    mensaje = f"{emojis.example} Ingresa ejemplos de frases con esta palabra: "
+    mensaje = f"{emojis.examples} Ingresa ejemplos de frases con esta palabra: "
     mensaje = utils.escapar_caracteres_especiales(mensaje)
     return mensaje
 
@@ -92,7 +97,7 @@ def ask_explain_edited():
     return mensaje
 
 def ask_examples_edited():
-    mensaje = f"{emojis.example} Ingrese los ejemplos corregidos: "
+    mensaje = f"{emojis.examples} Ingrese los ejemplos corregidos: "
     mensaje = utils.escapar_caracteres_especiales(mensaje)
     return mensaje
 
@@ -102,17 +107,17 @@ def ask_lang_listening():
     return mensaje
 
 def error_manage_word():
-    mensaje = f'😪 Ups... Error al gestionar la palabra.'
+    mensaje = f'😪 Ups! Error al gestionar la palabra.'
     mensaje = utils.escapar_caracteres_especiales(mensaje)
     return mensaje
 
 def error_reschedule_word():
-    mensaje = f"😪 Ups... Hubo un error al reprogramar la palabra.\n Consulte la palabra e intente olvidarla nuevamente. "
+    mensaje = f"😪 Ups! Hubo un error al reprogramar la palabra.\n Consulte la palabra e intente olvidarla nuevamente. "
     mensaje = utils.escapar_caracteres_especiales(mensaje)
     return mensaje
 
 def general_error(cause):
-    mensaje = f"😪 Ups... Se ha presentado un error.\n\nCausa:`{str(cause)}`"
+    mensaje = f"😪 Ups! Se ha presentado un error\n\nCausa:`{str(cause)}`"
     mensaje = utils.escapar_caracteres_especiales(mensaje)
     return mensaje
 
@@ -122,12 +127,12 @@ def error_months():
     return mensaje
 
 def error_forget_word():
-    mensaje = f'😪 Ups... Error al olvidar la palabra.'
+    mensaje = f'😪 Ups! Error al olvidar la palabra'
     mensaje = utils.escapar_caracteres_especiales(mensaje)
     return mensaje
 
 def error_playing_word(cause):
-    mensaje = f"😪 Ups... Error al reproducir la palabra.\n\n Causa:`{str(cause)}`"
+    mensaje = f"😪 Ups! Error al reproducir la palabra\n\n Causa:`{str(cause)}`"
     mensaje = utils.escapar_caracteres_especiales(mensaje)
     return mensaje
 
@@ -136,9 +141,9 @@ def success_create_word(word):
 {format_word(word)}'''
     return mensaje
 
-def success_update_word(word):
+def success_update_word(objWord):
     mensaje = f'''🔃 Palabra actualizada exitosamente
-{format_word(word)}'''
+{format_word(objWord)}'''
     return mensaje
 
 def success_delete_word(word):

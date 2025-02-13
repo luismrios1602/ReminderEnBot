@@ -1,5 +1,6 @@
 from config import MYSQL_HOST, MYSQL_USERNAME, MYSQL_PASSWORD, MYSQL_DATABASE, MYSQL_PORT, HORA_MORNING, HORA_NIGHT
-from classes import WordClass
+from classes.WordClass import WordClass
+
 import mysql.connector
 import random
 import datetime
@@ -255,8 +256,8 @@ def query_search_expired_words():
             conexion.close()
 
 #funcion para reprogramar una palabra que haya sido encontrada en la consulta de vencidas o mostrada el día de hoy
-def query_reschedule_word(word):
-    print(word)
+def query_reschedule_word(objWord):
+    print(objWord)
     try: 
         conexion = connect()
     except Exception as err:
@@ -267,17 +268,17 @@ def query_reschedule_word(word):
         try:
             print('Conectado a la BD')
             # Generar fecha y hora aleatorias
-            fecha_aleatoria = generar_fecha_aleatoria(word.daysSchedule)
+            fecha_aleatoria = generar_fecha_aleatoria(objWord.daysSchedule)
             hora_aleatoria = generar_hora_aleatoria()
             # Combinar fecha y hora en un objeto datetime
             fecha_hora_aleatoria = datetime.datetime.combine(fecha_aleatoria.date(), hora_aleatoria.time())
             
-            print(f'Reprogramando palabra {word.id} - fecha: {fecha_hora_aleatoria}... ')
+            print(f'Reprogramando palabra {objWord.id} - fecha: {fecha_hora_aleatoria}... ')
 
             cursor = conexion.cursor()
-            sql = f"UPDATE words SET scheduled = %s WHERE id = %s"
+            sql = f"UPDATE words SET scheduled = %s, days_schedule = %s WHERE id = %s"
             
-            parametros = (fecha_hora_aleatoria, word.id)
+            parametros = (fecha_hora_aleatoria, objWord.daysSchedule, objWord.id)
             cursor.execute(sql, parametros)
             conexion.commit()
 
@@ -292,7 +293,7 @@ def query_reschedule_word(word):
             conexion.close()
 
 #funcion para editar una palabra especifica
-def query_update_word(word):
+def query_update_word(objWord):
     try: 
         conexion = connect()
     except Exception as err:
@@ -303,9 +304,9 @@ def query_update_word(word):
         try:
             
             cursor = conexion.cursor()
-            sql = f"UPDATE words SET word = %s, meaning = %s, description = %s, examples = %s, remind = true WHERE id = {word.id}"
+            sql = f"UPDATE words SET word = %s, meaning = %s, description = %s, examples = %s, remind = true WHERE id = {objWord.id}"
             
-            parametros = (word.word, word.meaning, word.description, word.examples)
+            parametros = (objWord.word, objWord.meaning, objWord.description, objWord.examples)
             cursor.execute(sql, parametros)
             conexion.commit()
 

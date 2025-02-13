@@ -1,5 +1,5 @@
 explain = '\U0001F4A1'
-example = '\U0001F4DD'
+examples = '\U0001F4DD'
 flags = {
     'EN': '\U0001F1FA\U0001F1F8',
     'ES': '\U0001F1EA\U0001F1F8',

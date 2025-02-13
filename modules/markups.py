@@ -1,5 +1,5 @@
-from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton
-from string import emojis
+from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton, ReplyKeyboardRemove
+from strings import emojis
 
 # funcion para mapear los botones de siguiente, cerrar y anterior para los mensajes de paginacion
 def pag_buttons():
@@ -44,15 +44,15 @@ def edit_word_buttons(word_obj):
         f"{emojis.flags[word_obj.lang_word]} Palabra", callback_data="edit_word")
     
     btn_meaning = InlineKeyboardButton(
-        f"{emojis.flags[word_obj.lang_word]} Traducciones", callback_data="edit_meaning")
+        f"{emojis.flags[word_obj.lang_meaning]} Traducciones", callback_data="edit_meaning")
     
     btn_explain = InlineKeyboardButton(
         f"{emojis.explain} Explicación", callback_data="edit_explain")
     
-    btn_example = InlineKeyboardButton(
-        f"{emojis.example} Ejemplos", callback_data="edit_example")
+    btn_examples = InlineKeyboardButton(
+        f"{emojis.examples} Ejemplos", callback_data="edit_examples")
 
-    markup.add(btn_word, btn_meaning, btn_explain, btn_example)
+    markup.add(btn_word, btn_meaning, btn_explain, btn_examples)
     return markup
 
 def cancel_button():
@@ -86,8 +86,8 @@ def language_buttons(type):
     
 def confirm_register_buttons():
     markup = InlineKeyboardMarkup(row_width=2)
-    btn_confirmar = InlineKeyboardButton("Confirmar", callback_data="confirmar")
-    btn_cancelar = InlineKeyboardButton("Cancelar", callback_data="cancelar")
+    btn_confirmar = InlineKeyboardButton("✅ Confirmar", callback_data="confirmar")
+    btn_cancelar = InlineKeyboardButton("✖ Cancelar", callback_data="cancelar")
 
     markup.add(btn_confirmar, btn_cancelar)
     return markup
@@ -103,3 +103,6 @@ def forget_period_buttons(id_word):
 
     markup.add(btn_1_month, btn_3_month, btn_6_month,btn_12_month, btn_for_ever)
     return markup
+
+def remove_keyboard(): 
+    return ReplyKeyboardRemove()
