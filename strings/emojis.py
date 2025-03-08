@@ -7,3 +7,4 @@ flags = {
     'FR': '\U0001F1EB\U0001F1F7', 
     'IT': '\U0001F1EE\U0001F1F9'
 }
+date = '\U0001F4C5'

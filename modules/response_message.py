@@ -22,14 +22,27 @@ def show_all(cur_page=0, listWords=[]):
 
 # funcion para formatear una palabra y mostrarla siempre de la misma forma
 def format_word(word):
-    return f'''
-{emojis.flags[word.lang_word]} *{word.word}*
+    #iniciamos las partes del texto que se van a mostrar 
+    parts = [
+        f"{emojis.flags[word.lang_word]} *{word.word}*" #primero solo la palabra
+    ]
 
-{emojis.explain} {word.description}
+    #si hay una descripción, la unimos al array
+    if word.description:
+        parts.append(f"{emojis.explain} {word.description}")
 
-{emojis.examples} {word.examples}
+    #si hay ejemplos, la unimos al array
+    if word.examples:
+        parts.append(f"{emojis.examples} _{word.examples}_")
 
-{emojis.flags[word.lang_meaning]} ||{word.meaning}|| '''
+    #al final juntamos las partes que faltan con un extend 
+    parts.extend([
+        f"{emojis.flags[word.lang_meaning]} ||{word.meaning}||",
+        f"{emojis.date} {word.daysSchedule} días"
+    ])
+
+    #con el join, ahora los 2 saltos de linea funcionan como delimitadores para cada parte, y si no hay description o examples, no se ven esos saltos
+    return "\n\n".join(parts)
 
 def no_current_word():
     mensaje = '🤔 No hay una palabra actual, consultela nuevamente'
@@ -159,3 +172,10 @@ def success_forget_word(word):
     mensaje = f'✅🧠 Palabra *{word}* olvidada exitosamente. Para activarla nuevamente puede buscarla y editarla'
     mensaje = utils.escapar_caracteres_especiales(mensaje)
     return mensaje
+
+def skiped():
+    mensaje = 'Omitido'
+    return mensaje
+
+def next_step():
+    return 'Siguiente'

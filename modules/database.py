@@ -375,7 +375,7 @@ def query_unschedule_word(word_id):
 
 # Función para generar una fecha aleatoria entre 1 y los días días enviados (7 por defecto) después de la fecha actual
 def generar_fecha_aleatoria(dias):
-    dias_aleatorios = random.randint(1, dias) 
+    dias_aleatorios = random.randint(1, dias) + 1 #Le ponemos +1 porque a veces está cayendo en el mismo día de hoy entonces siempre se respetará esos 7 días
     fecha_actual = datetime.datetime.now()
     fecha_aleatoria = fecha_actual + datetime.timedelta(days=dias_aleatorios)
     return fecha_aleatoria

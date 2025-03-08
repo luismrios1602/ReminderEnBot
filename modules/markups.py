@@ -1,4 +1,4 @@
-from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton, ReplyKeyboardRemove
+from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton, ReplyKeyboardRemove, ReplyKeyboardMarkup, KeyboardButton
 from strings import emojis
 
 # funcion para mapear los botones de siguiente, cerrar y anterior para los mensajes de paginacion
@@ -106,3 +106,8 @@ def forget_period_buttons(id_word):
 
 def remove_keyboard(): 
     return ReplyKeyboardRemove()
+
+def skip_button():
+    markup = ReplyKeyboardMarkup(row_width=1, resize_keyboard=True, one_time_keyboard=True)
+    markup.add(KeyboardButton("Omitir"))
+    return markup

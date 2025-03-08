@@ -27,12 +27,13 @@ Para conocer cómo funciono, envía /help para ayuda''')
 # responde al comando /help
 @bot.message_handler(commands=["help"])
 def cmd_help(message):
-    markup = markups.remove_keyboard()
+    # markup = markups.remove_keyboard()
+    markup = markups.skip_button()
     
     mensaje = ('🤖 _¿Qué puedo hacer?:_\n\n'
     '🔍 *Buscar:* Enviame una palabra, si la palabra está registrada la mostraré\\. \n\n'
     '➕ *Registrar:* Si la palabra ingresada no existe, tendrá la opción de registrarla \n\n'
-    '   Traducción, Explicación y Ejemplos \n\n'
+    '   Explicación, Ejemplos, Traducción y Frecuencia de recordatorio \n\n'
     '*🔊 Pronunciación:* Cuando envías una palabra tienes la opción de escuchar su pronunciación antes de registrarla\\. \n\n'
     '*📅 Recordatorio:* Cada palabra registrada será recordada en un lapso de 7 días\\. El día y hora serán al azar entre las 8:00 UTC\\-5 y las 22:00 UTC\\-5 \n\n'
     '*🗑 Eliminar:* Busque la palabra a eliminar y haga clic en Eliminar\\.\n\n'
@@ -71,7 +72,7 @@ def bot_message_text(message):
         else: 
             bot.send_message(message.chat.id, "¿Ese comando qué?")
     else:  # si es un texto normal es porque debe ser una palabra y la buscamos
-        word_found, mensaje = main.search_word(chatId, message_text,)
+        word_found, mensaje = main.search_word(chatId, message_text)
 
         #Si no hubo excepciones es porque la consulta salió correctamente
         markup = None
@@ -295,7 +296,7 @@ def inline_buttom(call):
             lang = utils.escapar_caracteres_especiales(lang)
 
             main.register_lang_meaning_current_word(chatId, lang)
-            markup = markups.cancel_button()
+            markup = markups.skip_button()
             mensaje = response_message.ask_explain_register()
 
             bot.send_message(chatId, mensaje, reply_markup=markup)
@@ -318,8 +319,7 @@ def inline_buttom(call):
         # Ponemos que responda dos mensajes mas arriba porque el id es el selector de idiomas, 1 es palabra no encontrada y 2 el mensaje del usuario
         send_pronunciation(word, lang_word, chatId, call.message)
 
-        #eliminamos el mensaje para que no escojan otro idioma
-        # bot.delete_message(chatId, messageId-1)
+        #eliminamos el ultimo mensaje para que no escojan otro idioma
         bot.delete_message(chatId, messageId)
 
     elif call.data.split("_")[0] == 'forget':
@@ -370,6 +370,9 @@ def inline_buttom(call):
     else:
             word = utils.dropEspecialCaracters(call.data)
             send_pronunciation(word, None, chatId, call.message)
+
+            #Después de mandar la pronunciación quitamos los botones inline para que no puedan hacer más nada 
+            remove_inlinebuttons(chatId, messageId)
         
 #endregion 
 
@@ -398,17 +401,28 @@ def step_receive_meaning(message):
 
 #funcion para recibir la explicación
 def step_receive_explain(message):
+    messageText = message.text
     chatId = message.chat.id
 
-    if message.text == '/cancel':
+    if messageText == '/cancel':
       main.clear_current_word(chatId)
       send_cancel_message(chatId)
       return
     
     current_word_user = main.select_current_word(chatId)
     if current_word_user:
-        main.register_explain_current_word(chatId, message.text)
-        markup = markups.cancel_button()
+        if messageText == 'Omitir':
+            mensaje = response_message.skiped()
+            messageText = ''
+        else: 
+            mensaje = response_message.next_step()
+
+        # Mandamos un mensaje de siguiente (o omitido) como excusa para quitar el boton de omitir por si no omiten
+        markup = markups.remove_keyboard()
+        bot.send_message(chatId, mensaje, reply_markup=markup)
+
+        main.register_explain_current_word(chatId,  messageText)
+        markup = markups.skip_button()
         mensaje = response_message.ask_examples_register()
 
         bot.send_message(message.chat.id, mensaje,parse_mode="MarkdownV2", reply_markup=markup)
@@ -420,9 +434,10 @@ def step_receive_explain(message):
 
 #funcion para recibir la explicación
 def step_receive_examples(message):
+    messageText = message.text
     chatId = message.chat.id
 
-    if message.text == '/cancel':
+    if messageText == '/cancel':
       main.clear_current_word(chatId)
       send_cancel_message(chatId)
       return
@@ -431,7 +446,17 @@ def step_receive_examples(message):
     print(f'Palabra a guardar: {current_word_user}')
 
     if current_word_user:
-        main.register_examples_current_word(chatId, message.text)
+        if messageText == 'Omitir':
+            mensaje = response_message.skiped()
+            messageText = ''
+        else:
+            mensaje = response_message.next_step()
+
+        # Mandamos un mensaje de siguiente (o omitido) como excusa para quitar el boton de omitir por si no omiten
+        markup = markups.remove_keyboard()
+        bot.send_message(chatId, mensaje, reply_markup=markup)
+
+        main.register_examples_current_word(chatId, messageText)
         markup = markups.confirm_register_buttons()
         mensaje = response_message.format_word(current_word_user)
 
@@ -629,13 +654,18 @@ def send_pronunciation(word, lang, chatId, message):
             mensaje = response_message.ask_lang_listening()
             markup = markups.language_buttons('pron')
 
-            bot.reply_to(message, mensaje, parse_mode="MarkdownV2", reply_markup=markup)
+            bot.send_message(chatId, mensaje, parse_mode="MarkdownV2", reply_markup=markup)
 
     except Exception as err:
         print(err)
         mensaje = response_message.error_playing_word(err)
         bot.send_message(chatId, mensaje)
-    
+
+#funcion para quitar los botones inline de un mensaje
+def remove_inlinebuttons(chatId, messageId):
+    bot.edit_message_reply_markup(chatId, messageId, reply_markup=None)
+    return 
+
 #endregion 
 
 #region === METODOS DE INICIO DEL BOT === 
