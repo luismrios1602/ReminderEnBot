@@ -381,6 +381,7 @@ def inline_buttom(call):
 #funcion para recibir las traducciones
 def step_receive_meaning(message):
     chatId = message.chat.id
+    messageId = message.id
 
     if message.text == '/cancel':
       main.clear_current_word(chatId)
@@ -389,6 +390,9 @@ def step_receive_meaning(message):
     
     current_word_user = main.select_current_word(chatId)
     if current_word_user:
+        #Cuando envie las traducciónes eliminamos el mensaje del bot (-1 porque el id es el que envia el usuario) que pide las traducciones para evitar bugazos
+        bot.delete_message(chatId, messageId-1)
+
         main.register_meaning_current_word(chatId, message.text)
         markup = markups.language_buttons(type="meaning")
         mensaje = response_message.ask_lang_meaning_register()

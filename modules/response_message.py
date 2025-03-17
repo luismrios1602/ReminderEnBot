@@ -101,7 +101,7 @@ def ask_word_edited(lang_word):
 
 def ask_meaning_edited(lang_meaning):
     mensaje = f"{emojis.flags[lang_meaning]} Ingrese la(s) traduccion(es) corregida(s):"
-    mensaje = utils.escapar_caracteres_especiales(mensaje)
+    # mensaje = utils.escapar_caracteres_especiales(mensaje)
     return mensaje
 
 def ask_explain_edited():
@@ -116,7 +116,7 @@ def ask_examples_edited():
 
 def ask_lang_listening(word):
     mensaje = f"""*{word}*
-    🗣️ ¿En qué idioma quieres escuchar?"""
+🗣️ ¿En qué idioma quieres escuchar?"""
     mensaje = utils.escapar_caracteres_especiales(mensaje)
     return mensaje
 
