@@ -617,7 +617,7 @@ def send_pronunciation(word, lang, chatId, message):
         cur_word = main.select_current_word(chatId)
         if cur_word is None:
             cur_word = main.assign_current_word(chatId, word)
-            mensaje = response_message.ask_lang_listening()
+            mensaje = response_message.ask_lang_listening(cur_word.word)
             markup = markups.language_buttons('pron')
 
             bot.reply_to(message, mensaje, parse_mode="MarkdownV2",reply_markup=markup)
@@ -651,7 +651,7 @@ def send_pronunciation(word, lang, chatId, message):
         else:
             # Si no hay lengauje es porque quiere escuchar la pronunciacion de una palabra o frase no registrada
             cur_word = main.assign_current_word(chatId, word)
-            mensaje = response_message.ask_lang_listening()
+            mensaje = response_message.ask_lang_listening(cur_word.word)
             markup = markups.language_buttons('pron')
 
             bot.send_message(chatId, mensaje, parse_mode="MarkdownV2", reply_markup=markup)
@@ -701,6 +701,8 @@ def iniciar_bot():
 # === MAIN ===
 if __name__ == '__main__':
     print("Bot Iniciado")
+    bot.send_message(MY_CHAT_ID, f"Bot Iniciado en {MYSQL_HOST}")
+
     #agregamos los comandos personalizados
     bot.set_my_commands([
         telebot.types.BotCommand("/start", "Iniciar el bot"),
@@ -712,4 +714,5 @@ if __name__ == '__main__':
     iniciar_bot()
 
     #Si llega a aquí es porque la palmó o lo detuvieron
+    bot.send_message(MY_CHAT_ID, f"Bot en {MYSQL_HOST} Detenido.")
     print("Bot Detenido")

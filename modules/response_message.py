@@ -71,7 +71,7 @@ def question_forget_period(word):
 
 def ask_meaning_register():
     mensaje = f"🌎 Ingrese su(s) traducción(es): "
-    mensaje = utils.escapar_caracteres_especiales(mensaje)
+    # mensaje = utils.escapar_caracteres_especiales(mensaje)
     return mensaje
 
 def ask_lang_meaning_register():
@@ -114,8 +114,9 @@ def ask_examples_edited():
     mensaje = utils.escapar_caracteres_especiales(mensaje)
     return mensaje
 
-def ask_lang_listening():
-    mensaje = f"🗣️ ¿En qué idioma quieres escuchar?"
+def ask_lang_listening(word):
+    mensaje = f"""*{word}*
+    🗣️ ¿En qué idioma quieres escuchar?"""
     mensaje = utils.escapar_caracteres_especiales(mensaje)
     return mensaje
 
