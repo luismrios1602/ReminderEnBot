@@ -5,6 +5,10 @@ def escapar_caracteres_especiales(text):
     caracteres_reservados = r'|!.-[]()~`<>#+={}'
     for char in caracteres_reservados:
         text = text.replace(char, '\\' + char)
+    
+    #Eliminamos el doble escape, para las palabras que ya venían con caracteres especiales
+    text = text.replace("\\\\", "\\")
+
     return text
 
 # funcion para eliminar caracteres especiales de una palabra para que no se rompa el nombre del archivo

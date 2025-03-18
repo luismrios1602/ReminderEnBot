@@ -634,7 +634,8 @@ def send_pronunciation(word, lang, chatId, message):
         # Validamos si la palabra actual es del usuario tiene un lenguaje.
         if cur_word.lang_word != '':
             name_voice_file, mensaje = main.get_pronunciation(word, cur_word.lang_word)
-
+            print(name_voice_file)
+            
             if name_voice_file is None:
                 bot.send_message(chatId, mensaje)
                 return

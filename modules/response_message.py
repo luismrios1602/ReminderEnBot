@@ -115,7 +115,7 @@ def ask_examples_edited():
     return mensaje
 
 def ask_lang_listening(word):
-    mensaje = f"""*{word}*
+    mensaje = f"""*{word} *
 🗣️ ¿En qué idioma quieres escuchar?"""
     mensaje = utils.escapar_caracteres_especiales(mensaje)
     return mensaje

@@ -213,10 +213,14 @@ def get_pronunciation(word, lang):
         lang = 'PT' if lang == 'BR' else lang
 
         tts = gTTS(text=f' {word}', lang=f'{lang.lower()}', tld=f'{accents[lang]}')
-        tts.save(f'{word}.mp3')  # Guarda el archivo de audio
+
+        #Eliminamos los caracteres especiales del nombre del artchivo para que se pueda guardar
+        file_name = word.replace('\\', '').replace('-','_').replace('.','').replace(',','')
+
+        tts.save(f'{file_name}.mp3')  # Guarda el archivo de audio
 
         # Envía el archivo de audio al usuario
-        return (f'{word}.mp3', 'Audio creado exitosamente')
+        return (f'{file_name}.mp3', 'Audio creado exitosamente')
         
     except Exception as err:
         return (None, response_message.error_playing_word(err))
