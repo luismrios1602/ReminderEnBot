@@ -1,1 +1,1 @@
-from classes import WordClass
+from classes import WordClass, UserClass

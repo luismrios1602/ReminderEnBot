@@ -1,11 +1,13 @@
 from modules import database, response_message
 from classes.WordClass import WordClass
+from classes.UserClass import UserClass
 from gtts import gTTS
 
 from utils import utils
 
 # diccionario principal con los datos de la palabra actual de cada usuario, para que no se convinen
 current_words = {}
+current_users = {}
 
 def clear_current_word(chatId): 
     global current_words
@@ -24,7 +26,10 @@ def search_scheduled_words():
 
 # funcion para buscar una sola palabra
 def search_word(chatId, word):
-    global current_words
+    global current_words, current_users
+
+    lang_bot = current_users.get(chatId, UserClass()).lang
+
     word_found = database.query_select_word(word, chatId)
 
     # Si es None es porque la palabra no existe entonces invitamos a la persona a registrarla
@@ -40,21 +45,88 @@ def search_word(chatId, word):
     # Si no es none ni error es porque encontró la palabra entonces procedemos a mostrarla
     else:
         current_words[chatId] = word_found
-        return (word_found, response_message.format_word(word_found))
+        return (word_found, response_message.format_word(word_found, lang_bot))
     
 def search_word_by_id(chatId, id_word):
     global current_words
+
     word_found = database.query_select_word_by_id(id_word, chatId)
 
     if word_found == 'error': 
         return (None, response_message.general_error('No especificado'))
     
     if word_found is None: 
-        return (None, response_message.word_no_found)
+        return (None, response_message.word_no_found(id_word))
     
     #Si encontramos la palabra la colocamos como actual y la retonamos
     current_words[chatId] = word_found
-    return (word_found, 'Palabra Encontrada')
+    return (word_found, response_message.word_found(id_word))
+
+def search_user(chatId, username, research=True):
+    user_found = database.query_select_user(chatId)
+
+    if user_found == 'error':
+        return (None, response_message.general_error('No especificado'))
+
+    #Si el usuario no existe, lo creamos porque seguramente es antiguo y no se ha registrado
+    if user_found is None:
+        if not research:
+            return (None, response_message.user_no_found(username))
+
+        created = database.query_create_user(UserClass(chatId=chatId, name=username))
+        if created == 'error':
+            return (None, response_message.error_create_user())
+
+        #Cuando lo cree, que lo vuelva a buscar pero sin repetir 2 veces,
+        # y lo que devuelva (debería ser el usuario creado) que lo retorne
+        return (search_user(chatId, username, False))
+    else:
+        # Si lo encuentra, que lo retorne
+        print(user_found)
+        return (user_found, response_message.user_found(chatId, user_found.name))
+
+
+def select_user(chatId, username):
+    global current_users
+
+    if chatId in current_users:
+        return (current_users[chatId], response_message.user_found(chatId, username))
+
+    #Si no está en los actuales, lo buscamos
+    user_found, resp = search_user(chatId, username)
+    if user_found is not None:
+        current_users[chatId] = user_found
+
+    #Lo haya encontrado en BD o no (en realidad si no lo encuenta lo crea, lol), que lo retorne
+    return (user_found, resp)
+
+def select_lang_current_user(chatId):
+    global current_users
+
+    if chatId in current_users:
+        return current_users.get(chatId, UserClass()).lang
+
+    #Si no está en los actuales, lo buscamos
+    user_found, resp = search_user(chatId, '')
+    if user_found is not None:
+        current_users[chatId] = user_found
+
+    #Lo haya encontrado en BD o no (en realidad si no lo encuentra lo crea, lol), que retorne lo que haya o ES por defecto
+    return current_users.get(chatId, UserClass()).lang
+
+def update_user_lang(chatId, new_lang):
+    global current_users
+
+    updated = database.query_update_lang_user(chatId, new_lang)
+
+    resp = 'error'
+    if updated == 'success':
+        current_users[chatId] = UserClass(chatId=chatId, lang=new_lang)
+        resp = response_message.success_update_lang_user(new_lang)
+    else:
+        resp = response_message.error_update_lang_user(new_lang)
+
+    return (updated, resp)
 
 #función para buscar la palabra actual de un chat especifico
 def select_current_word(chatId):
@@ -106,7 +178,7 @@ def create_current_word(chatId):
     if created == 'error':
         return (False, response_message.error_manage_word(), None)
 
-    # Si todo se guardó bien respondemos que se guardó correctamente,retornamos el mensaje a mostrar y la palabra guardada (para la pronunciacion)
+    # Si la palabra se guardó bien respondemos que se guardó correctamente,retornamos el mensaje a mostrar y la palabra guardada (para la pronunciacion)
     return (True, response_message.success_create_word(cur_word), cur_word.word)
     
 # funcion para editar la propiedad (atr) de la palabra actual del usuario.

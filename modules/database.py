@@ -1,9 +1,13 @@
 from config import MYSQL_HOST, MYSQL_USERNAME, MYSQL_PASSWORD, MYSQL_DATABASE, MYSQL_PORT, HORA_MORNING, HORA_NIGHT
 from classes.WordClass import WordClass
+from classes.UserClass import UserClass
 
 import mysql.connector
 import random
 import datetime
+
+from modules.response_message import user_found
+
 
 def connect():
     return mysql.connector.connect(
@@ -49,9 +53,44 @@ def query_create_word(objWord, chatId):
 
         return "success"
 
+def query_create_user(objUser):
+    try:
+        conexion = connect()
+    except Exception as err:
+        print('Error creando la conexión')
+        print(err)
+        return "error"
+    else:
+        try:
+            print('Conectado a la BD')
+
+            # Generar fecha y hora aleatorias
+            fecha_aleatoria = generar_fecha_aleatoria(7)  # Mandamos 7 días por defecto
+            hora_aleatoria = generar_hora_aleatoria()
+            # Combinar fecha y hora en un objeto datetime
+            fecha_hora_aleatoria = datetime.datetime.combine(fecha_aleatoria.date(), hora_aleatoria.time())
+
+            cursor = conexion.cursor()
+            sql = f"INSERT INTO users(chat_id, name, lang) VALUES (%s, %s, %s)"
+            print(f'Guardando usuario {objUser.chatId}, {objUser.name}...')
+
+            parametros = (objUser.chatId, objUser.name, objUser.lang)
+            cursor.execute(sql, parametros)
+            conexion.commit()
+
+        except Exception as err:
+            print(err)
+            return "error"
+
+        finally:
+            if conexion.is_connected():
+                conexion.close()
+
+        return "success"
+
 #función para consultar las palabras programadas para ahora 
 def query_select_scheduled_words():
-    try: 
+    try:
         conexion = connect()
     except Exception as err:
         print('Error creando la conexión')
@@ -127,6 +166,47 @@ def query_select_word(word, chatId):
 
         except Exception as err:
             print('Error consultando palabras')
+            print(err)
+            return "error"
+    finally:
+        if conexion.is_connected():
+            conexion.close()
+
+
+def query_select_user(chatId):
+    try:
+        conexion = connect()
+    except Exception as err:
+        print('Error creando la conexión')
+        print(err)
+        return "error"
+    else:
+        try:
+            print('Conectado a la BD')
+
+            # Construir y ejecutar la consulta SQL
+            query = f"SELECT id, chat_id, name, lang FROM users WHERE chat_id = %s"
+
+            parametros = (chatId,)
+            cursor = conexion.cursor()
+            cursor.execute(query, parametros)
+
+            # Cada registro viene como una tupla, entonces basados en la tupla creamos un objeto tipo word
+            lista = cursor.fetchall()
+            print(f'Usuarios encontrados: {len(lista)}')
+            if len(lista) > 0:
+                # Si sí hay datos, nos traemos el primero, como es una lista de tuplas
+                u_id, u_chat_id, u_name, u_lang = lista[0]
+                user_found = UserClass(u_id, u_chat_id, u_name, u_lang)
+
+                #user_found = UserClass(lista[0][0], lista[0][1], lista[0][2], lista[0][3])
+                print(user_found)
+                return user_found
+            else:
+                return None
+
+        except Exception as err:
+            print('Error consultando usuarios')
             print(err)
             return "error"
     finally:
@@ -369,6 +449,37 @@ def query_unschedule_word(word_id):
             print('Error actualizando palabras')
             print(err)
             return str(err)
+    finally:
+        if conexion.is_connected():
+            conexion.close()
+
+
+# funcion para reasingarle un idioma a un usuario
+def query_update_lang_user(chatId, new_lang):
+    try:
+        conexion = connect()
+    except Exception as err:
+        print('Error creando la conexión')
+        print(err)
+        return "error"
+    else:
+        try:
+            print('Conectado a la BD')
+            print(f'Actualizando idioma del usuario {chatId}...')
+
+            cursor = conexion.cursor()
+            sql = f"UPDATE users SET lang = %s WHERE chat_id = %s"
+
+            parametros = (new_lang, chatId)
+            cursor.execute(sql, parametros)
+            conexion.commit()
+
+            return "success"
+
+        except Exception as err:
+            print('Error actualizando usuario')
+            print(err)
+            return "error"
     finally:
         if conexion.is_connected():
             conexion.close()

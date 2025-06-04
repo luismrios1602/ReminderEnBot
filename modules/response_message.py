@@ -1,7 +1,22 @@
-from strings import emojis
+from tokenize import String
+
+from strings import emojis, strings
+from strings.strings import Strings
 from utils import utils
 
 num_row = 5
+
+def test(lang='ES'):
+    strings = Strings(lang)
+    return strings.getText('test')
+
+def welcome(username, lang='ES'):
+    strings = Strings(lang)
+    return strings.getText('bienvenida', username=username)
+
+def help(lang):
+    strings = Strings(lang)
+    return strings.getText('ayuda')
 
 # funcion para mapear la respuesta del mostrartodos
 def show_all(cur_page=0, listWords=[]):
@@ -21,7 +36,9 @@ def show_all(cur_page=0, listWords=[]):
     return header_resp + response
 
 # funcion para formatear una palabra y mostrarla siempre de la misma forma
-def format_word(word):
+def format_word(word, language='ES'):
+    strings = Strings(language)
+
     #iniciamos las partes del texto que se van a mostrar 
     parts = [
         f"{emojis.flags[word.lang_word]} *{word.word}*" #primero solo la palabra
@@ -38,7 +55,7 @@ def format_word(word):
     #al final juntamos las partes que faltan con un extend 
     parts.extend([
         f"{emojis.flags[word.lang_meaning]} ||{word.meaning}||",
-        f"{emojis.date} {word.daysSchedule} días"
+        f"{emojis.date} {word.daysSchedule} {strings.getText("dias")}"
     ])
 
     #con el join, ahora los 2 saltos de linea funcionan como delimitadores para cada parte, y si no hay description o examples, no se ven esos saltos
@@ -55,12 +72,22 @@ def no_word_by_id():
     return mensaje
 
 def word_no_found(word):
-    mensaje = f'🔎 Palabra *{word}* no encontrada'
+    mensaje = f'🔎❌ Palabra *{word}* no encontrada'
+    mensaje = utils.escapar_caracteres_especiales(mensaje)
+    return mensaje
+
+def word_found(word):
+    mensaje = f'🔍✅ Palabra *{word}* en encontrada'
     mensaje = utils.escapar_caracteres_especiales(mensaje)
     return mensaje
 
 def question_language_register():
     mensaje = f"🌎 ¿En qué idioma está esta palabra? "
+    mensaje = utils.escapar_caracteres_especiales(mensaje)
+    return mensaje
+
+def question_language_user():
+    mensaje = f"🌎 ¿En qué idioma quieres que te responda?"
     mensaje = utils.escapar_caracteres_especiales(mensaje)
     return mensaje
 
@@ -150,14 +177,14 @@ def error_playing_word(cause):
     mensaje = utils.escapar_caracteres_especiales(mensaje)
     return mensaje
 
-def success_create_word(word):
+def success_create_word(word, language='ES'):
     mensaje = f'''✅ Palabra guardada exitosamente
-{format_word(word)}'''
+{format_word(word, language)}'''
     return mensaje
 
-def success_update_word(objWord):
+def success_update_word(objWord, language='ES'):
     mensaje = f'''🔃 Palabra actualizada exitosamente
-{format_word(objWord)}'''
+{format_word(objWord, language)}'''
     return mensaje
 
 def success_delete_word(word):
@@ -170,7 +197,12 @@ def success_reschedule_word(word, last_daysSchedule, new_daysSchedule):
     return mensaje
 
 def success_forget_word(word):
-    mensaje = f'✅🧠 Palabra *{word}* olvidada exitosamente. Para activarla nuevamente puede buscarla y editarla'
+    mensaje = f'🧠✅ Palabra *{word}* olvidada exitosamente. Para activarla nuevamente puede buscarla y editarla'
+    mensaje = utils.escapar_caracteres_especiales(mensaje)
+    return mensaje
+
+def success_update_lang_user(lang):
+    mensaje = f'🌏✅ Idioma {emojis.flags[lang]} asignado exitosamente'
     mensaje = utils.escapar_caracteres_especiales(mensaje)
     return mensaje
 
@@ -180,3 +212,23 @@ def skiped():
 
 def next_step():
     return 'Siguiente'
+
+def user_no_found(chatId):
+    mensaje = f'🔎❌ Usuario *{chatId}* no encontrado'
+    mensaje = utils.escapar_caracteres_especiales(mensaje)
+    return mensaje
+
+def user_found(chatId, name):
+    mensaje = f'🔍✅ Usuario *{chatId}* *{name}* encontrado'
+    mensaje = utils.escapar_caracteres_especiales(mensaje)
+    return mensaje
+
+def error_create_user():
+    mensaje = f"😪 Ups! No se ha podido registrar el usuario"
+    mensaje = utils.escapar_caracteres_especiales(mensaje)
+    return mensaje
+
+def error_update_lang_user(lang):
+    mensaje = f"😪 Ups! Se ha presentado un error asignando el idioma {lang}"
+    mensaje = utils.escapar_caracteres_especiales(mensaje)
+    return mensaje
