@@ -2,7 +2,7 @@ from strings import emojis
 
 class English:
     def __init__(self):
-        self.test = f"{emojis.flags["EN"]} testing"
+        self.test = f"{emojis.flags['EN']} testing"
         self.dias = "days"
         self.bienvenida = '''Welcome, {username}👋! I'm RemindEn, your word reminder ✌
 Send /help to know how I work.'''

@@ -3,7 +3,7 @@ from strings import emojis
 
 class Spanish:
     def __init__(self):
-        self.test = f"{emojis.flags["ES"]} probando"
+        self.test = f"{emojis.flags['ES']} probando"
         self.dias = "días"
         self.bienvenida = '''Bienvenido, {username}👋! Soy RemindEn, tu recordatorio de palabras ✌
 Envía /help para conocer cómo funciono.'''

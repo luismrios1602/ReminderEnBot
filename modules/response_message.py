@@ -55,7 +55,7 @@ def format_word(word, language='ES'):
     #al final juntamos las partes que faltan con un extend 
     parts.extend([
         f"{emojis.flags[word.lang_meaning]} ||{word.meaning}||",
-        f"{emojis.date} {word.daysSchedule} {strings.getText("dias")}"
+        f"{emojis.date} {word.daysSchedule} {strings.getText('dias')}"
     ])
 
     #con el join, ahora los 2 saltos de linea funcionan como delimitadores para cada parte, y si no hay description o examples, no se ven esos saltos
