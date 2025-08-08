@@ -4,6 +4,7 @@
 /__pycache__
 */__pycache__
 /venv/
-.env
-config.py
+.env.local
+.env.p_anywhere
+.env.contabo
 bot.cmd

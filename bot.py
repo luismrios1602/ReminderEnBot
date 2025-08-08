@@ -3,14 +3,14 @@ import time
 import telebot
 import threading
 
-from config import *
+from classes.ConfigClass import ConfigClass as config
 from modules import main, markups, response_message
 from strings import emojis
 from utils import utils
 from datetime import datetime, time as hora
 
 # instanciamos el bot de Telegram
-bot = telebot.TeleBot(TELEGRAM_TOKEN)
+bot = telebot.TeleBot(config.TELEGRAM_TOKEN)
 
 # variables de paginacion de busquedas
 pagination = []
@@ -600,10 +600,10 @@ def search_words_today():
     hora_actual = hora(datetime.now().time().hour, datetime.now().time().minute)
 
     # Define la hora mañana (08:00) en horario UTC+0 del servidor
-    hora_manhana = hora(HORA_MORNING, 0)
+    hora_manhana = hora(config.HORA_MORNING, 0)
 
     # Define la hora noche (22:00) en horario UTC+0 del servidor
-    hora_noche = hora(HORA_NIGHT, 0)
+    hora_noche = hora(config.HORA_NIGHT, 0)
 
     print(f'hora actual: {hora_actual}')
 
@@ -755,7 +755,7 @@ def iniciar_bot():
 # === MAIN ===
 if __name__ == '__main__':
     print("Bot Iniciado")
-    bot.send_message(MY_CHAT_ID, f"Bot Iniciado en {MYSQL_HOST}")
+    bot.send_message(config.MY_CHAT_ID, f"Bot Iniciado en {config.MYSQL_HOST}")
 
     # agregamos los comandos personalizados
     bot.set_my_commands([
@@ -769,5 +769,5 @@ if __name__ == '__main__':
     iniciar_bot()
 
     # Si llega a aquí es porque la palmó o lo detuvieron
-    bot.send_message(MY_CHAT_ID, f"Bot en {MYSQL_HOST} Detenido.")
+    bot.send_message(config.MY_CHAT_ID, f"Bot en {config.MYSQL_HOST} Detenido.")
     print("Bot Detenido")

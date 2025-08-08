@@ -1,4 +1,4 @@
-from config import MYSQL_HOST, MYSQL_USERNAME, MYSQL_PASSWORD, MYSQL_DATABASE, MYSQL_PORT, HORA_MORNING, HORA_NIGHT
+from classes.ConfigClass import ConfigClass as config
 from classes.WordClass import WordClass
 from classes.UserClass import UserClass
 
@@ -6,20 +6,19 @@ import mysql.connector
 import random
 import datetime
 
-from modules.response_message import user_found
-
-
 def connect():
+    print(f'{config.MYSQL_HOST} | {config.MYSQL_USERNAME} | {config.MYSQL_PASSWORD} | {config.MYSQL_DATABASE}')
+
     return mysql.connector.connect(
-        host=MYSQL_HOST,
-        user=MYSQL_USERNAME,
-        password=MYSQL_PASSWORD,
-        port=MYSQL_PORT,
-        database=MYSQL_DATABASE)
+        host=config.MYSQL_HOST,
+        user=config.MYSQL_USERNAME,
+        password=config.MYSQL_PASSWORD,
+        port=config.MYSQL_PORT,
+        database=config.MYSQL_DATABASE)
 
 #funcion para crear el audio en la bd
 def query_create_word(objWord, chatId):
-    try: 
+    try:
         conexion = connect()
     except Exception as err:
         print('Error creando la conexión')
@@ -48,8 +47,9 @@ def query_create_word(objWord, chatId):
             return "error"
 
         finally:
-            if conexion.is_connected():
-                conexion.close()
+            if conexion is not None:
+                if conexion.is_connected():
+                    conexion.close()
 
         return "success"
 
@@ -126,13 +126,14 @@ def query_select_scheduled_words():
             print('Error consultando palabras')
             print(err)
             return []
-    finally:
-        if conexion.is_connected():
-            conexion.close()
+        finally:
+            if conexion.is_connected():
+                conexion.close()
 
 #funcion para consultar una sola palabra
 def query_select_word(word, chatId):
-    try: 
+
+    try:
         conexion = connect()
     except Exception as err:
         print('Error creando la conexión')
@@ -168,10 +169,9 @@ def query_select_word(word, chatId):
             print('Error consultando palabras')
             print(err)
             return "error"
-    finally:
-        if conexion.is_connected():
-            conexion.close()
-
+        finally:
+            if conexion.is_connected():
+                conexion.close()
 
 def query_select_user(chatId):
     try:
@@ -209,9 +209,9 @@ def query_select_user(chatId):
             print('Error consultando usuarios')
             print(err)
             return "error"
-    finally:
-        if conexion.is_connected():
-            conexion.close()
+        finally:
+            if conexion.is_connected():
+                conexion.close()
 
 #funcion para consultar una sola palabra
 def query_select_word_by_id(idWord, chatId):
@@ -249,9 +249,9 @@ def query_select_word_by_id(idWord, chatId):
             print('Error consultando palabras')
             print(err)
             return "error"
-    finally:
-        if conexion.is_connected():
-            conexion.close()
+        finally:
+            if conexion.is_connected():
+                conexion.close()
 
 #función para consultar las palabras programadas para ahora 
 def query_select_all(chatId):
@@ -290,9 +290,9 @@ def query_select_all(chatId):
             print('Error consultando palabras')
             print(err)
             return []
-    finally:
-        if conexion.is_connected():
-            conexion.close()
+        finally:
+            if conexion.is_connected():
+                conexion.close()
 
 #funcion para consultar todas las palabras vencidas a renovar
 def query_search_expired_words():
@@ -331,9 +331,9 @@ def query_search_expired_words():
             print('Error consultando palabras')
             print(err)
             return []
-    finally:
-        if conexion.is_connected():
-            conexion.close()
+        finally:
+            if conexion.is_connected():
+                conexion.close()
 
 #funcion para reprogramar una palabra que haya sido encontrada en la consulta de vencidas o mostrada el día de hoy
 def query_reschedule_word(objWord):
@@ -368,9 +368,9 @@ def query_reschedule_word(objWord):
             print('Error actualizando palabras')
             print(err)
             return "error"
-    finally:
-        if conexion.is_connected():
-            conexion.close()
+        finally:
+            if conexion.is_connected():
+                conexion.close()
 
 #funcion para editar una palabra especifica
 def query_update_word(objWord):
@@ -396,9 +396,9 @@ def query_update_word(objWord):
             print('Error actualizando palabras')
             print(err)
             return "error"
-    finally:
-        if conexion.is_connected():
-            conexion.close()
+        finally:
+            if conexion.is_connected():
+                conexion.close()
 
 def query_delete_word(word_id):
     try: 
@@ -422,9 +422,9 @@ def query_delete_word(word_id):
             print('Error actualizando palabras')
             print(err)
             return "error"
-    finally:
-        if conexion.is_connected():
-            conexion.close()
+        finally:
+            if conexion.is_connected():
+                conexion.close()
 
 
 # funcion para olvidar una palabra
@@ -449,9 +449,9 @@ def query_unschedule_word(word_id):
             print('Error actualizando palabras')
             print(err)
             return str(err)
-    finally:
-        if conexion.is_connected():
-            conexion.close()
+        finally:
+            if conexion.is_connected():
+                conexion.close()
 
 
 # funcion para reasingarle un idioma a un usuario
@@ -480,9 +480,9 @@ def query_update_lang_user(chatId, new_lang):
             print('Error actualizando usuario')
             print(err)
             return "error"
-    finally:
-        if conexion.is_connected():
-            conexion.close()
+        finally:
+            if conexion.is_connected():
+                conexion.close()
 
 # Función para generar una fecha aleatoria entre 1 y los días días enviados (7 por defecto) después de la fecha actual
 def generar_fecha_aleatoria(dias):
@@ -493,7 +493,7 @@ def generar_fecha_aleatoria(dias):
 
 # Función para generar una hora aleatoria entre las 8:00 y las 22:00, pero le ponemos 5 horas para que esté con el horario del UTC-5
 def generar_hora_aleatoria():
-    hora_aleatoria = datetime.datetime.strptime(f"{HORA_MORNING}:00", "%H:%M")
+    hora_aleatoria = datetime.datetime.strptime(f"{config.HORA_MORNING}:00", "%H:%M")
     minutos_aleatorios = random.randint(0, 840)  # 840 minutos = 14 horas
     hora_aleatoria += datetime.timedelta(minutes=minutos_aleatorios)
     return hora_aleatoria

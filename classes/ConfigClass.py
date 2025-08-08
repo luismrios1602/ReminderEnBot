@@ -1,10 +1,29 @@
-from dataclasses import dataclass
 import os
+import argparse
 from dotenv import load_dotenv
 
-load_dotenv() # Cargar archivo .env 
+def getEnv() -> str:
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--l", action="store_true", help="Usar entorno de localhost")
+    parser.add_argument("--c", action="store_true", help="Usar entorno de contabo")
+    parser.add_argument("--p", action="store_true", help="Usar entorno de PythonAnywhere")
+    args = parser.parse_args()
 
-@dataclass
+    # Determinar entorno
+    if args.l:
+        entorno = "local"
+    elif args.c:
+        entorno = "contabo"
+    elif args.p:
+        entorno = "p_anywhere"
+    else:
+        entorno = "local"  # valor por defecto
+
+    # Cargar el .env correspondiente
+    return f".env.{entorno}"
+
+load_dotenv(getEnv()) # Cargar archivo .env.entorno
+
 class ConfigClass:
     TELEGRAM_TOKEN: str = os.getenv("TELEGRAM_TOKEN", "")
     MY_CHAT_ID: int = int(os.getenv("MY_CHAT_ID", 0))
@@ -17,3 +36,4 @@ class ConfigClass:
 
     HORA_MORNING: int = int(os.getenv("HORA_MORNING", 0))
     HORA_NIGHT: int = int(os.getenv("HORA_NIGHT", 23))
+

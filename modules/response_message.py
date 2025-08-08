@@ -1,6 +1,4 @@
-from tokenize import String
-
-from strings import emojis, strings
+from strings import emojis
 from strings.strings import Strings
 from utils import utils
 
