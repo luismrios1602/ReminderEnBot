@@ -3,6 +3,7 @@
 /.idea
 /__pycache__
 */__pycache__
+/venv/
+.env
 config.py
 bot.cmd
-ReminderEnBot.zip

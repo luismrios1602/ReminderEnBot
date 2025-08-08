@@ -1,5 +1,5 @@
 class WordClass: 
-    def __init__(self, id=0, word="", lang_word="", meaning="", lang_meaning="", description="", examples="", chatId=0, daysSchedule=7, scheduled=""):
+    def __init__(self, id: int | None=0, word="", lang_word="", meaning="", lang_meaning="", description="", examples="", chatId=0, daysSchedule=7, scheduled=""):
         self.id = id
         self.word = word
         self.lang_word = lang_word
