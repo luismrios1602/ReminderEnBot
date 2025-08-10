@@ -5,11 +5,11 @@ from dotenv import load_dotenv
 def getEnv() -> str:
     parser = argparse.ArgumentParser()
     parser.add_argument("--l", action="store_true", help="Usar entorno de localhost")
-    parser.add_argument("--c", action="store_true", help="Usar entorno de contabo")
+    parser.add_argument("--c", action="store_true", help="Usar entorno de Contabo")
     parser.add_argument("--p", action="store_true", help="Usar entorno de PythonAnywhere")
     args = parser.parse_args()
 
-    # Determinar entorno
+    # Determinar el entorno
     if args.l:
         entorno = "local"
     elif args.c:
@@ -19,7 +19,7 @@ def getEnv() -> str:
     else:
         entorno = "local"  # valor por defecto
 
-    # Cargar el .env correspondiente
+    # Cargar .env correspondiente
     return f".env.{entorno}"
 
 load_dotenv(getEnv()) # Cargar archivo .env.entorno
