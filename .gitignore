@@ -1,9 +1,8 @@
 # Archivos de configuración
-/.vscode
-/.idea
-/__pycache__
-*/__pycache__
-/venv/
+.vscode/
+.idea/
+__pycache__/
+venv/
 .env.local
 .env.p_anywhere
 .env.contabo
