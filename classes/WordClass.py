@@ -14,6 +14,5 @@ class WordClass:
     def __str__(self):
         return f"WordClass(id={self.id}, word='{self.word}', lang_word='{self.lang_word}', " \
                f"'meaning='{self.meaning}', lang_meaning='{self.lang_meaning}', " \
-               f"description='{self.description}', examples='{self.examples}', chatId={self.chatId}, " \
-                f"daysSchedule={self.daysSchedule}, " \
+               f"chatId={self.chatId}, daysSchedule={self.daysSchedule}, " \
                f"scheduled={self.scheduled})"

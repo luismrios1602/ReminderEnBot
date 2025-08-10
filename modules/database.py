@@ -7,8 +7,6 @@ import random
 import datetime
 
 def connect():
-    print(f'{config.MYSQL_HOST} | {config.MYSQL_USERNAME} | {config.MYSQL_PASSWORD} | {config.MYSQL_DATABASE}')
-
     return mysql.connector.connect(
         host=config.MYSQL_HOST,
         user=config.MYSQL_USERNAME,
