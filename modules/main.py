@@ -82,7 +82,6 @@ def search_user(chatId, username, research=True):
         return (search_user(chatId, username, False))
     else:
         # Si lo encuentra, que lo retorne
-        print(user_found)
         return (user_found, response_message.user_found(chatId, user_found.name))
 
 

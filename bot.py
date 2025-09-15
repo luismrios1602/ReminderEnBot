@@ -669,10 +669,6 @@ def search_words_today():
     hora_noche = hora(config.HORA_NIGHT, 0)
 
     print(f'hora actual: {hora_actual}')
-    print(f'hora morning: {hora_manhana}')
-    print(f'hora night: {hora_noche}')
-
-
 
     if hora_actual == hora_manhana:
         print("Buenos dias")
