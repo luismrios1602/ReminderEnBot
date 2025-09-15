@@ -99,9 +99,10 @@ def forget_period_buttons(id_word):
     btn_3_month = InlineKeyboardButton(f"3️⃣ Meses", callback_data="resche_3")
     btn_6_month = InlineKeyboardButton(f"6️⃣ Meses", callback_data="resche_6")
     btn_12_month = InlineKeyboardButton(f"1️⃣ Año", callback_data="resche_12")
-    btn_for_ever = InlineKeyboardButton(f"✖️ No recordar", callback_data=f"unsche_{id_word}")
+    btn_for_ever = InlineKeyboardButton(f"✖️🧠 No recordar", callback_data=f"unsche_{id_word}")
+    btn_cancelar = InlineKeyboardButton("✖ Cancelar", callback_data="cancelar")
 
-    markup.add(btn_1_month, btn_3_month, btn_6_month,btn_12_month, btn_for_ever)
+    markup.add(btn_1_month, btn_3_month, btn_6_month,btn_12_month, btn_for_ever, btn_cancelar)
     return markup
 
 def remove_keyboard(): 
@@ -115,6 +116,7 @@ def skip_button():
 def register_button():
     markup = InlineKeyboardMarkup(row_width=3)
     btn_registrar = InlineKeyboardButton("➕ Registrar", callback_data="registrar")
+    btn_cancelar = InlineKeyboardButton("✖ Cancelar", callback_data="cancelar")
 
-    markup.add(btn_registrar)
+    markup.add(btn_registrar, btn_cancelar)
     return markup

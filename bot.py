@@ -275,22 +275,22 @@ def inline_buttom(call):
         bot.delete_message(chatId, messageId)
 
     elif call.data == 'registrar':
-        cur_word = main.select_current_word(chatId)
+        current_word_user = main.select_current_word(chatId)
 
-        if cur_word is None:
+        if current_word_user is None:
             mensaje = response_message.no_current_word()
             bot.send_message(chatId, mensaje)
             return
 
         # Si la palabra actual ya tenia un idioma es porque viene desde la definicion de la IA
-        if cur_word.lang_word:
+        if current_word_user.lang_word:
             # Quitamos el boton de registrar de donde se mandó a llamar
             bot.edit_message_reply_markup(chatId, messageId, reply_markup=None)
 
             markup = markups.cancel_button()
-            mensaje = response_message.ask_meaning_register()
+            mensaje = response_message.ask_meaning_register(current_word_user.word)
 
-            bot.send_message(chatId, mensaje, reply_markup=markup)
+            bot.send_message(chatId, mensaje, reply_markup=markup, parse_mode="MarkdownV2")
             bot.register_next_step_handler(call.message, step_receive_meaning)
 
         else:
@@ -314,9 +314,9 @@ def inline_buttom(call):
 
             main.register_lang_current_word(chatId, lang)
             markup = markups.cancel_button()
-            mensaje = response_message.ask_meaning_register()
+            mensaje = response_message.ask_meaning_register(current_word_user.word)
 
-            bot.send_message(chatId, mensaje, reply_markup=markup)
+            bot.send_message(chatId, mensaje, reply_markup=markup, parse_mode="MarkdownV2")
             bot.register_next_step_handler(call.message, step_receive_meaning)
 
         else:
@@ -669,6 +669,10 @@ def search_words_today():
     hora_noche = hora(config.HORA_NIGHT, 0)
 
     print(f'hora actual: {hora_actual}')
+    print(f'hora morning: {hora_manhana}')
+    print(f'hora night: {hora_noche}')
+
+
 
     if hora_actual == hora_manhana:
         print("Buenos dias")

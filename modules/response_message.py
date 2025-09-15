@@ -96,9 +96,9 @@ def question_forget_period(word):
     mensaje = utils.escapar_caracteres_especiales(mensaje)
     return mensaje
 
-def ask_meaning_register():
-    mensaje = f"🌎 Ingrese su(s) traducción(es): "
-    # mensaje = utils.escapar_caracteres_especiales(mensaje)
+def ask_meaning_register(word):
+    mensaje = f"*{word}*\n\n🌎 Ingrese su(s) traducción(es): "
+    mensaje = utils.escapar_caracteres_especiales(mensaje)
     return mensaje
 
 def ask_lang_meaning_register():
