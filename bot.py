@@ -680,9 +680,9 @@ def search_words_today():
         bot.send_message(243692305, f"😴 Hasta mañana, hoy estuve activo ✌")
         return
 
-        # Si la hora actual es menor a la hora de la mañana 13 pero es mayor que la noche 3
-    # Es porque está entre las 3 y las 13 entonces a esa hora no hacemos nada
-    if hora_actual < hora_manhana and hora_actual > hora_noche:
+    # Si la hora actual es menor a la hora de la mañana (8), pero es mayor que la noche (22)
+    # Es porque está entre las 3 y las 8 entonces a esa hora no hacemos nada
+    if hora_actual < hora_manhana or hora_actual > hora_noche:
         print("Estoy durmiendo zzz")
         return
 
