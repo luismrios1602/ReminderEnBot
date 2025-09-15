@@ -15,7 +15,7 @@ def word_no_found_buttons(message_text):
     markup = InlineKeyboardMarkup(row_width=3)
     btn_registrar = InlineKeyboardButton("➕ Registrar", callback_data="registrar")
     btn_pronunciacion = InlineKeyboardButton("🔊 Pronunciación", callback_data=f"{message_text}")
-    btn_cancelar = InlineKeyboardButton("✖ Cancelar", callback_data="cancelar")
+    btn_cancelar = InlineKeyboardButton("👨‍🏫 Definir", callback_data=f"def_{message_text}")
 
     markup.add(btn_registrar, btn_pronunciacion, btn_cancelar)
     return markup
@@ -110,4 +110,11 @@ def remove_keyboard():
 def skip_button():
     markup = ReplyKeyboardMarkup(row_width=1, resize_keyboard=True, one_time_keyboard=True)
     markup.add(KeyboardButton("Omitir"))
+    return markup
+
+def register_button():
+    markup = InlineKeyboardMarkup(row_width=3)
+    btn_registrar = InlineKeyboardButton("➕ Registrar", callback_data="registrar")
+
+    markup.add(btn_registrar)
     return markup

@@ -1,3 +1,5 @@
+from gtts import lang
+
 from strings import emojis
 from strings.strings import Strings
 from utils import utils
@@ -228,5 +230,10 @@ def error_create_user():
 
 def error_update_lang_user(lang):
     mensaje = f"😪 Ups! Se ha presentado un error asignando el idioma {lang}"
+    mensaje = utils.escapar_caracteres_especiales(mensaje)
+    return mensaje
+
+def searching_def(word, lang):
+    mensaje = f"👨‍🏫 _Buscando la definición de *{word}* en {emojis.flags[lang]}_ ... "
     mensaje = utils.escapar_caracteres_especiales(mensaje)
     return mensaje

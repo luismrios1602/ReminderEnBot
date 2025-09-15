@@ -37,3 +37,5 @@ class ConfigClass:
     HORA_MORNING: int = int(os.getenv("HORA_MORNING", 0))
     HORA_NIGHT: int = int(os.getenv("HORA_NIGHT", 23))
 
+    IA_APIKEY: str = os.getenv("IA_APIKEY", "")
+

@@ -2,7 +2,7 @@ import os
 import time
 import telebot
 import threading
-
+from modules import ia
 from classes.ConfigClass import ConfigClass as config
 from modules import main, markups, response_message
 from strings import emojis
@@ -91,6 +91,7 @@ def bot_message_text(message):
         # Si no hubo excepciones es porque la consulta salió correctamente
         markup = None
         if word_found is None:
+            markup = markups.word_no_found_buttons(message_text)
             markup = markups.word_no_found_buttons(message_text)
         else:
             markup = markups.word_found_buttons(message_text)
@@ -274,12 +275,33 @@ def inline_buttom(call):
         bot.delete_message(chatId, messageId)
 
     elif call.data == 'registrar':
-        bot.delete_message(chatId, messageId)
+        cur_word = main.select_current_word(chatId)
 
-        mensaje = response_message.question_language_register()
-        markup = markups.language_buttons(type="word")
+        if cur_word is None:
+            mensaje = response_message.no_current_word()
+            bot.send_message(chatId, mensaje)
+            return
 
-        bot.send_message(chatId, mensaje, parse_mode="MarkdownV2", reply_markup=markup)
+        # Si la palabra actual ya tenia un idioma es porque viene desde la definicion de la IA
+        if cur_word.lang_word:
+            # Quitamos el boton de registrar de donde se mandó a llamar
+            bot.edit_message_reply_markup(chatId, messageId, reply_markup=None)
+
+            markup = markups.cancel_button()
+            mensaje = response_message.ask_meaning_register()
+
+            bot.send_message(chatId, mensaje, reply_markup=markup)
+            bot.register_next_step_handler(call.message, step_receive_meaning)
+
+        else:
+            # Si no, entonces seguimos el curso normal
+            bot.delete_message(chatId, messageId)
+
+            mensaje = response_message.question_language_register()
+            markup = markups.language_buttons("word")
+            bot.send_message(chatId, mensaje, parse_mode="MarkdownV2", reply_markup=markup)
+
+
 
     elif call.data in ['word_EN', 'word_ES', 'word_BR', 'word_FR', 'word_IT']:
         bot.delete_message(chatId, messageId)
@@ -396,6 +418,47 @@ def inline_buttom(call):
         bot.delete_message(chatId, messageId)
         main.clear_current_word(chatId)
 
+    # Verificamos si quiere definir la palabra (el boton envia def_word)
+    elif call.data.split("_")[0] == 'def':
+        word = call.data.split("_")[1]
+
+        # Asignamos la palabra como palabra actual por si la quiere registrar
+        main.assign_current_word(chatId, word)
+
+        markup = markups.language_buttons("ask")
+        mensaje = response_message.question_language_register()
+
+        bot.delete_message(chatId, messageId)
+        bot.send_message(chatId, mensaje, reply_markup=markup, parse_mode="MarkdownV2")
+
+    # Verificamos si ya le asignó un idioma a la palabra y le quiere preguntar a la ia (el boton envia ask_ia_idioma)
+    elif call.data.split("_")[0] == 'ask':
+        lang_word = call.data.split("_")[1]
+        lang_bot = main.select_lang_current_user(chatId)
+        cur_word = main.select_current_word(chatId)
+
+        if cur_word is None:
+            bot.send_message(chatId, response_message.no_current_word())
+            return
+
+        # Si hay palabra actual le asignamos el idioma que escogió el usuario
+        main.register_lang_current_word(chatId, lang_word)
+
+        # Ahora viene lo chido, le enviamos a la IA para que nos la defina
+        # Pero como se va a demorar en responder, metemos ahí un mensaje de consultando definición
+        bot.delete_message(chatId, messageId)
+
+        mensaje = response_message.searching_def(cur_word.word, lang_word)
+        new_message = bot.send_message(chatId, mensaje, parse_mode="MarkdownV2")
+
+        ia_def = ia.get_ia_def(cur_word.word, lang_bot, lang_word)
+        ia_def = utils.escapar_caracteres_especiales(ia_def)
+        markup = markups.register_button()
+
+        # Cuando termine, eliminamos el mensaje que mandamos de buscando y respondemos con la def
+        bot.delete_message(chatId, new_message.id)
+        bot.send_message(chatId, ia_def, reply_markup=markup, parse_mode="MarkdownV2")
+
     # Si no es ninguno es porque es pronunciacion
     else:
         word = utils.dropEspecialCaracters(call.data)
@@ -421,7 +484,7 @@ def step_receive_meaning(message):
 
     current_word_user = main.select_current_word(chatId)
     if current_word_user:
-        # Cuando envie las traducciónes eliminamos el mensaje del bot (-1 porque el id es el que envia el usuario) que pide las traducciones para evitar bugazos
+        # Cuando envie las traducciones eliminamos el mensaje del bot (-1 porque el id es el que envia el usuario) que pide las traducciones para evitar bugazos
         bot.delete_message(chatId, messageId - 1)
 
         main.register_meaning_current_word(chatId, message.text)
