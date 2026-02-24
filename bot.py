@@ -2,9 +2,8 @@ import os
 import time
 import telebot
 import threading
-from modules import ia
 from classes.ConfigClass import ConfigClass as config
-from modules import main, markups, response_message
+from modules import main, markups, response_message, ia
 from strings import emojis
 from utils import utils
 from datetime import datetime, time as hora
@@ -74,6 +73,7 @@ def cmd_mostrartodos(message):
 @bot.message_handler(content_types=["text"])
 def bot_message_text(message):
     message_text = utils.escapar_caracteres_especiales(message.text)
+    message_text = message_text.title() #La convertimos a "Palabra Enviada" para guardarla como se debe así se envie en minuscula
     chatId = message.chat.id
     lang_bot = main.select_lang_current_user(chatId)
 
@@ -301,8 +301,6 @@ def inline_buttom(call):
             markup = markups.language_buttons("word")
             bot.send_message(chatId, mensaje, parse_mode="MarkdownV2", reply_markup=markup)
 
-
-
     elif call.data in ['word_EN', 'word_ES', 'word_BR', 'word_FR', 'word_IT']:
         bot.delete_message(chatId, messageId)
 
@@ -441,23 +439,30 @@ def inline_buttom(call):
             bot.send_message(chatId, response_message.no_current_word())
             return
 
-        # Si hay palabra actual le asignamos el idioma que escogió el usuario
-        main.register_lang_current_word(chatId, lang_word)
+        try:
+            # Si hay palabra actual le asignamos el idioma que escogió el usuario
+            main.register_lang_current_word(chatId, lang_word)
 
-        # Ahora viene lo chido, le enviamos a la IA para que nos la defina
-        # Pero como se va a demorar en responder, metemos ahí un mensaje de consultando definición
-        bot.delete_message(chatId, messageId)
+            # Ahora viene lo chido, le enviamos a la IA para que nos la defina
+            # Pero como se va a demorar en responder, metemos ahí un mensaje de consultando definición
+            bot.delete_message(chatId, messageId)
 
-        mensaje = response_message.searching_def(cur_word.word, lang_word)
-        new_message = bot.send_message(chatId, mensaje, parse_mode="MarkdownV2")
+            mensaje = response_message.searching_def(cur_word.word, lang_word)
+            new_message = bot.send_message(chatId, mensaje, parse_mode="MarkdownV2")
 
-        ia_def = ia.get_ia_def(cur_word.word, lang_bot, lang_word)
-        ia_def = utils.escapar_caracteres_especiales(ia_def)
-        markup = markups.register_button()
+            ia_def = ia.get_ia_def(cur_word.word, lang_bot, lang_word)
+            ia_def = utils.escapar_caracteres_especiales(ia_def, nobold=True)
+            markup = markups.register_button()
 
-        # Cuando termine, eliminamos el mensaje que mandamos de buscando y respondemos con la def
-        bot.delete_message(chatId, new_message.id)
-        bot.send_message(chatId, ia_def, reply_markup=markup, parse_mode="MarkdownV2")
+            # Cuando termine, eliminamos el mensaje que mandamos de buscando y respondemos con la def
+            bot.delete_message(chatId, new_message.id)
+            bot.send_message(chatId, ia_def, reply_markup=markup, parse_mode="MarkdownV2")
+
+        except Exception as ex:
+            print(ex)
+            markup = markups.word_no_found_buttons(cur_word.word)
+            mensaje = response_message.error_def_word(cur_word.word)
+            bot.send_message(chatId, mensaje, reply_markup=markup, parse_mode="MarkdownV2")
 
     # Si no es ninguno es porque es pronunciacion
     else:

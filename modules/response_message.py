@@ -237,3 +237,8 @@ def searching_def(word, lang):
     mensaje = f"👨‍🏫 _Buscando la definición de *{word}* en {emojis.flags[lang]}_ ... "
     mensaje = utils.escapar_caracteres_especiales(mensaje)
     return mensaje
+
+def error_def_word(word):
+    mensaje = f"😥 Ha ocurrido un error al definir la palabra *{word}*.\nIntente nuevamente."
+    mensaje = utils.escapar_caracteres_especiales(mensaje)
+    return mensaje

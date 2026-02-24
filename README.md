@@ -33,7 +33,7 @@ Para usar este proyecto localmente, se debe realizar los siguientes pasos:
    
    * #### Crear archivo de variables de entorno
      ``` bash
-     mkdir .env.local
+     echo > .env.local
      ```
      
    * #### Asignar variables de entorno en el archivo <i>.env.local</i>
@@ -47,6 +47,9 @@ Para usar este proyecto localmente, se debe realizar los siguientes pasos:
      MYSQL_PORT = "[TU PUERTO DE MYSQL ex: 3306]"
      HORA_MORNING = [HORA EN LA QUE SE EMPEZARAN A ENVIAR LOS MENSAJES ex: 8]
      HORA_NIGHT = [HORA EN LA QUE SE DEJARAN DE ENVIAR LOS MENSAJES ex: 22 ]
+     IA_MODEL = "[NOMBRE DE LA EMPRESA DE IA QUE SUMINISTRA EL MODELO ex: Perplexity, Google]"
+     IA_URL = "[URL DE LA API KEY]"
+     IA_APIKEY = "[API KEY PARA USAR EL MODELO]"
      ```
      Importante: Reemplazar [TEXTO] por los valores reales, manteniendo las comillas donde se requiera.
 

@@ -4,35 +4,37 @@ from strings import emojis
 # funcion para mapear los botones de siguiente, cerrar y anterior para los mensajes de paginacion
 def pag_buttons():
     markup = InlineKeyboardMarkup(row_width=3)
-    btn_anterior = InlineKeyboardButton("◀️ Anterior", callback_data="pag_anterior")
-    btn_cerrar = InlineKeyboardButton("❌ Cerrar", callback_data="pag_cerrar")
-    btn_siguiente = InlineKeyboardButton("▶️ Siguiente", callback_data="pag_siguiente")
+    btn_anterior = InlineKeyboardButton("◀️ Anterior", callback_data="pag_anterior", style="primary")
+    btn_cerrar = InlineKeyboardButton("❌ Cerrar", callback_data="pag_cerrar", style="danger")
+    btn_siguiente = InlineKeyboardButton("▶️ Siguiente", callback_data="pag_siguiente", style="primary")
 
     markup.row(btn_anterior, btn_cerrar, btn_siguiente)
     return markup
 
 def word_no_found_buttons(message_text):
     markup = InlineKeyboardMarkup(row_width=3)
-    btn_registrar = InlineKeyboardButton("➕ Registrar", callback_data="registrar")
-    btn_pronunciacion = InlineKeyboardButton("🔊 Pronunciación", callback_data=f"{message_text}")
-    btn_cancelar = InlineKeyboardButton("👨‍🏫 Definir", callback_data=f"def_{message_text}")
+    btn_registrar = InlineKeyboardButton("➕ Registrar", callback_data="registrar", style="success")
 
-    markup.add(btn_registrar, btn_pronunciacion, btn_cancelar)
+    btn_pronunciacion = InlineKeyboardButton("🔊 Pronunciación", callback_data=f"{message_text}", style="primary")
+
+    btn_definir = InlineKeyboardButton("👨‍🏫 Definir", callback_data=f"def_{message_text}")
+
+    markup.add(btn_registrar, btn_pronunciacion, btn_definir)
     return markup
 
 def word_found_buttons(word):
     markup = InlineKeyboardMarkup(row_width=3)
-    btn_editar = InlineKeyboardButton(f"🖊 Editar", callback_data="editar")
+    btn_editar = InlineKeyboardButton(f"🖊 Editar", callback_data="editar", style="primary")
     btn_pronunciacion = InlineKeyboardButton(f"🔊 Pronunciación", callback_data=f"{word}")
-    btn_eliminar = InlineKeyboardButton(f"🗑 Eliminar", callback_data="eliminar")
+    btn_eliminar = InlineKeyboardButton(f"🗑 Eliminar", callback_data="eliminar", style="danger")
     
     markup.add(btn_editar, btn_pronunciacion, btn_eliminar)
     return markup
 
 def word_reminded_buttons(objWord):
     markup = InlineKeyboardMarkup(row_width=2)
-    btn_pronunciacion = InlineKeyboardButton(f"🔊 Pronunciación", callback_data=f"{objWord.word}")
-    btn_olvidar = InlineKeyboardButton(f"🧠 Olvidar", callback_data=f"forget_{objWord.id}")
+    btn_pronunciacion = InlineKeyboardButton(f"🔊 Pronunciación", callback_data=f"{objWord.word}", style="primary")
+    btn_olvidar = InlineKeyboardButton(f"🧠 Olvidar", callback_data=f"forget_{objWord.id}", style="danger")
 
     markup.add(btn_pronunciacion, btn_olvidar)
     return markup
@@ -57,14 +59,14 @@ def edit_word_buttons(word_obj):
 
 def cancel_button():
     markup = InlineKeyboardMarkup(row_width=2)
-    btn_cancelar = InlineKeyboardButton("✖ Cancelar", callback_data="cancelar")
+    btn_cancelar = InlineKeyboardButton("✖ Cancelar", callback_data="cancelar", style="danger")
 
     markup.add(btn_cancelar)
     return markup
 
 def pronunciation_button(word):
     markup = InlineKeyboardMarkup(row_width=2)
-    btn_pronunciacion = InlineKeyboardButton(f"🔊 Pronunciación", callback_data=f"{word}")
+    btn_pronunciacion = InlineKeyboardButton(f"🔊 Pronunciación", callback_data=f"{word}", style="primary")
 
     markup.add(btn_pronunciacion)
     return markup
@@ -79,15 +81,15 @@ def language_buttons(type):
     btn_frances = InlineKeyboardButton(f"{emojis.flags['FR']}", callback_data=f"{type}_FR")
     btn_italiano = InlineKeyboardButton(f"{emojis.flags['IT']}", callback_data=f"{type}_IT")
 
-    btn_cancelar = InlineKeyboardButton("✖ Cancelar", callback_data="cancelar")
+    btn_cancelar = InlineKeyboardButton("✖ Cancelar", callback_data="cancelar", style="danger")
 
     markup.add(btn_ingles, btn_espanhol, btn_portugues,btn_frances, btn_italiano, btn_cancelar)
     return markup
     
 def confirm_register_buttons():
     markup = InlineKeyboardMarkup(row_width=2)
-    btn_confirmar = InlineKeyboardButton("✅ Confirmar", callback_data="confirmar")
-    btn_cancelar = InlineKeyboardButton("✖ Cancelar", callback_data="cancelar")
+    btn_confirmar = InlineKeyboardButton("✅ Confirmar", callback_data="confirmar", style="success")
+    btn_cancelar = InlineKeyboardButton("✖ Cancelar", callback_data="cancelar", style="danger")
 
     markup.add(btn_confirmar, btn_cancelar)
     return markup
@@ -100,7 +102,7 @@ def forget_period_buttons(id_word):
     btn_6_month = InlineKeyboardButton(f"6️⃣ Meses", callback_data="resche_6")
     btn_12_month = InlineKeyboardButton(f"1️⃣ Año", callback_data="resche_12")
     btn_for_ever = InlineKeyboardButton(f"✖️🧠 No recordar", callback_data=f"unsche_{id_word}")
-    btn_cancelar = InlineKeyboardButton("✖ Cancelar", callback_data="cancelar")
+    btn_cancelar = InlineKeyboardButton("✖ Cancelar", callback_data="cancelar", style="danger")
 
     markup.add(btn_1_month, btn_3_month, btn_6_month,btn_12_month, btn_for_ever, btn_cancelar)
     return markup
@@ -115,8 +117,8 @@ def skip_button():
 
 def register_button():
     markup = InlineKeyboardMarkup(row_width=3)
-    btn_registrar = InlineKeyboardButton("➕ Registrar", callback_data="registrar")
-    btn_cancelar = InlineKeyboardButton("✖ Cancelar", callback_data="cancelar")
+    btn_registrar = InlineKeyboardButton("➕ Registrar", callback_data="registrar", style="success")
+    btn_cancelar = InlineKeyboardButton("✖ Cancelar", callback_data="cancelar", style="danger")
 
     markup.add(btn_registrar, btn_cancelar)
     return markup
